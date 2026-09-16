@@ -35,6 +35,17 @@ export function normalizeForMatch(value: string): string {
   return text.trim().replace(/\s+/g, " ");
 }
 
+/**
+ * 正規化で「どれだけ削られたか」の割合。
+ * "Strobe" は 0、"Strobe - Radio Edit" は 0.6 前後になる。
+ */
+function mixNoiseRatio(raw: string): number {
+  const base = raw.replace(/[^\p{L}\p{N}]+/gu, "");
+  if (base.length === 0) return 0;
+  const normalized = normalizeForMatch(raw).replace(/\s+/g, "");
+  return Math.max(0, (base.length - normalized.length) / base.length);
+}
+
 function bigrams(value: string): Map<string, number> {
   const counts = new Map<string, number>();
   const compact = value.replace(/\s+/g, "");
@@ -121,9 +132,14 @@ export function scoreMatch(local: LocalTrackForMatch, candidate: SpotifyTrack): 
     else durationAdjust = -0.25;
   }
 
+  // こちらに無いミックス表記が候補側にだけ付いている場合は少し下げる。
+  // "Strobe" を探しているのに "Strobe - Radio Edit" が同率 1 位になるのを防ぐ。
+  const mixPenalty =
+    0.05 * Math.max(0, mixNoiseRatio(candidate.name) - mixNoiseRatio(local.title));
+
   const score = Math.max(
     0,
-    Math.min(1, titleScore * 0.6 + artistScore * 0.35 + durationAdjust + 0.05),
+    Math.min(1, titleScore * 0.6 + artistScore * 0.35 + durationAdjust + 0.05 - mixPenalty),
   );
 
   const confident = score >= AUTO_LINK_THRESHOLD && titleScore >= 0.7 && artistScore >= 0.6;
@@ -158,5 +174,9 @@ export function rankCandidates(
 ): RankedCandidate[] {
   return candidates
     .map((candidate) => ({ candidate, match: scoreMatch(local, candidate) }))
-    .sort((a, b) => b.match.score - a.match.score);
+    .sort((a, b) => {
+      if (b.match.score !== a.match.score) return b.match.score - a.match.score;
+      // 同点なら人気のある方（オリジナルであることが多い）を優先する
+      return (b.candidate.popularity ?? 0) - (a.candidate.popularity ?? 0);
+    });
 }
