@@ -37,6 +37,9 @@ model Track {
   label       String?
   notes       String?
 
+  /// rekordbox の TrackID。再インポート時の突き合わせに使う
+  rekordboxId String? @unique
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -17,6 +17,7 @@ BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向け�
 - **BPM 管理** — ピッチフェーダーの許容幅（既定 ±8%）を考慮したテンポ適合判定。ハーフタイム / ダブルタイム（例: 128 ↔ 64、174）も候補に含めます。
 - **Camelot 管理** — 24 キーすべてを扱い、一般的な調表記（Am / C など）を併記。インタラクティブな Camelot ホイールでライブラリのキー分布を確認できます。
 - **次曲推薦** — テンポ・ハーモニック適合・エナジー遷移を重み付き合成してスコア化（0–100）。推薦理由も表示します。
+- **rekordbox インポート** — コレクション XML を読み込んで一括登録。キー表記は 3 種類すべて対応、プレイリスト単位の取り込みも可能です。
 - **セットリストビルダー** — 1 曲目を選び、推薦を辿って流れを構築。繋ぎごとのピッチ差・キー関係・エナジー変化を確認でき、テキストで書き出せます。
 - **Docker 対応** — 開発用（ホットリロード）と本番用（standalone ビルド）の 2 構成。
 
@@ -115,6 +116,61 @@ Camelot Wheel 上の関係で判定します。
 
 次曲のエナジーは「維持 〜 +1」が理想。そこから離れるほど減点します。
 
+## rekordbox インポート
+
+`/import` から、rekordbox の「ファイル > ライブラリ > コレクションを XML 形式で保存」で出力した XML を取り込めます。
+
+### 読み取る項目
+
+| rekordbox | このアプリ |
+|---|---|
+| `Name` / `Artist` | タイトル / アーティスト |
+| `AverageBpm` | BPM |
+| `Tonality` | Camelot キー |
+| `Genre` / `Label` / `Year` | ジャンル / レーベル / リリース年 |
+| `TotalTime` | 曲尺 |
+| `Comments` | メモ |
+| `Rating` / `Comments` | エナジー（設定による） |
+| `TrackID` | 再インポート時の突き合わせ用に保持 |
+
+### キー表記
+
+rekordbox の 3 通りの表示設定すべてを受け付けます。
+
+| 表記 | 例 | 変換先 |
+|---|---|---|
+| クラシック | `Am` / `F#m` / `Bb` | 8A / 11A / 6B |
+| Alphanumeric | `8A` | 8A |
+| Open Key | `1m` | 8A |
+
+### エナジーの決め方
+
+rekordbox にはエナジー項目が無いため、3 つから選べます。
+
+- **一律の既定値** — 全曲同じ値（既定 5）
+- **レーティングから換算** — ★1 → 2、★5 → 10。未評価は既定値
+- **コメントから読む** — `Energy 7` / `エナジー7` / `E7` を検出。無ければ既定値
+
+### 重複の扱い
+
+`TrackID` を優先し、無ければ「タイトル + アーティスト」で既存曲を判定します。「更新する」を選んだ場合も、**アプリ側で育てた値は不用意に潰しません**。
+
+- エナジー: 「一律の既定値」を選んでいるときは既存値を維持
+- メモ: rekordbox 側のコメントが空なら既存値を維持
+
+BPM またはキーが未解析の曲は取り込めません。取り込めなかった曲は理由付きで一覧表示されます。
+
+### API から使う
+
+```bash
+curl -X POST http://localhost:3000/api/import/rekordbox \
+  -F "file=@collection.xml" \
+  -F "dryRun=true" \
+  -F "energySource=rating"
+```
+
+`dryRun=true`（既定）なら解析結果を返すだけで書き込みません。他に `playlist`（`Crates > Peak Time` のようなパス）、`onDuplicate`（`skip` / `update`）、`defaultEnergy` を受け付けます。
+
 ## API
 
 | メソッド | パス | 説明 |
@@ -125,6 +181,7 @@ Camelot Wheel 上の関係で判定します。
 | `PATCH` | `/api/tracks/:id` | 更新 |
 | `DELETE` | `/api/tracks/:id` | 削除 |
 | `GET` | `/api/tracks/:id/recommendations` | 次曲推薦 |
+| `POST` | `/api/import/rekordbox` | rekordbox XML の解析・インポート |
 
 推薦 API のクエリ:
 
@@ -158,15 +215,18 @@ src/
     tracks/new/          楽曲登録
     tracks/[id]/         楽曲詳細＋次曲推薦
     tracks/[id]/edit/    編集
+    import/              rekordbox インポート
     setlist/             セットリストビルダー
     camelot/             Camelot ホイール
     api/tracks/          REST API
+    api/import/          インポート API
   components/            UI コンポーネント
   hooks/                 推薦取得フック
   lib/
     camelot.ts           Camelot Wheel ロジック
     bpm.ts               テンポ適合
     recommend.ts         推薦エンジン（純粋関数）
+    rekordbox.ts         rekordbox XML パーサ
     validation.ts        zod スキーマ
     prisma.ts            Prisma クライアント
 docker/
