@@ -14,6 +14,7 @@ const NAV = [
   { href: "/import", label: "インポート" },
   { href: "/setlist", label: "セットリスト" },
   { href: "/camelot", label: "Camelot ホイール" },
+  { href: "/spotify", label: "Spotify" },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

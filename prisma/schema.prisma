@@ -40,6 +40,13 @@ model Track {
   /// rekordbox の TrackID。再インポート時の突き合わせに使う
   rekordboxId String? @unique
 
+  /// Spotify のトラック ID。ジャケット表示とプレイリスト書き出しに使う
+  spotifyId   String? @unique
+  spotifyUrl  String?
+  albumArtUrl String?
+  /// 国際標準レコーディングコード。Spotify 側の同一曲判定に使える
+  isrc String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -47,4 +54,20 @@ model Track {
   @@index([bpm])
   @@index([camelot])
   @@index([energy])
+}
+
+/// Spotify の OAuth トークン。個人用アプリなので 1 行だけ持つ
+model SpotifyAccount {
+  id String @id @default("singleton")
+
+  spotifyUserId String
+  displayName   String?
+
+  accessToken  String
+  refreshToken String
+  scope        String
+  expiresAt    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

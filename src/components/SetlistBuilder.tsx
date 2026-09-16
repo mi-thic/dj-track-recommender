@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CamelotBadge } from "@/components/CamelotBadge";
 import { EnergyMeter } from "@/components/EnergyMeter";
+import { ExportToSpotify } from "@/components/ExportToSpotify";
 import { RecommendControlsBar } from "@/components/RecommendControlsBar";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { DEFAULT_CONTROLS, useRecommendations, type RecommendControls } from "@/hooks/useRecommendations";
@@ -116,7 +117,12 @@ export function SetlistBuilder() {
           </p>
         </div>
         {setlist.length > 0 ? (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ExportToSpotify
+              trackIds={setlist.map((track) => track.id)}
+              unlinkedCount={setlist.filter((track) => !track.spotifyId).length}
+              defaultName={`DJ Set — ${new Date().toLocaleDateString("ja-JP")}`}
+            />
             <button
               type="button"
               onClick={copySetlist}

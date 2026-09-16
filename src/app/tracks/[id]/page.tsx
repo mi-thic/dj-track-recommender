@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CamelotBadge } from "@/components/CamelotBadge";
 import { EnergyMeter } from "@/components/EnergyMeter";
 import { RecommendationPanel } from "@/components/RecommendationPanel";
+import { SpotifyTrackLink } from "@/components/SpotifyTrackLink";
 import { bpmRange, formatBpm } from "@/lib/bpm";
 import { getCompatibleKeys, toMusicalKey } from "@/lib/camelot";
 import { formatDuration } from "@/lib/format";
@@ -131,6 +132,8 @@ export default async function TrackDetailPage({ params }: PageProps) {
           ))}
         </div>
       </section>
+
+      <SpotifyTrackLink track={dto} />
 
       <RecommendationPanel trackId={dto.id} genres={genres} />
     </div>

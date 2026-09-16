@@ -201,12 +201,26 @@ export function TrackTable({ tracks }: { tracks: TrackDTO[] }) {
                 className="border-b border-deck-800/70 transition last:border-0 hover:bg-deck-850/60"
               >
                 <td className="px-4 py-3">
-                  <Link
-                    href={`/tracks/${track.id}`}
-                    className="font-medium text-white transition hover:text-neon"
-                  >
-                    {track.title}
-                  </Link>
+                  <div className="flex items-center gap-2.5">
+                    {track.albumArtUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={track.albumArtUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 shrink-0 rounded"
+                      />
+                    ) : (
+                      <span className="h-8 w-8 shrink-0 rounded bg-deck-800" aria-hidden />
+                    )}
+                    <Link
+                      href={`/tracks/${track.id}`}
+                      className="font-medium text-white transition hover:text-neon"
+                    >
+                      {track.title}
+                    </Link>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-deck-400">{track.artist}</td>
                 <td className="tabular px-4 py-3 text-right text-white">{formatBpm(track.bpm)}</td>

@@ -41,6 +41,10 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dj}:${POSTGRES_PASSWORD:-djpass}@db:5432/${POSTGRES_DB:-djapp}?schema=public
+      # standalone イメージには .env が入らないのでここで渡す
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/api/spotify/callback}
     ports:
       - "3000:3000"
     depends_on:

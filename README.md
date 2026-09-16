@@ -18,6 +18,7 @@ BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向け�
 - **Camelot 管理** — 24 キーすべてを扱い、一般的な調表記（Am / C など）を併記。インタラクティブな Camelot ホイールでライブラリのキー分布を確認できます。
 - **次曲推薦** — テンポ・ハーモニック適合・エナジー遷移を重み付き合成してスコア化（0–100）。推薦理由も表示します。
 - **rekordbox インポート** — コレクション XML を読み込んで一括登録。キー表記は 3 種類すべて対応、プレイリスト単位の取り込みも可能です。
+- **Spotify 連携** — 曲を Spotify と紐付けてジャケットを表示し、組んだセットをプレイリストとして書き出せます（BPM・キーは取得不可。後述）。
 - **セットリストビルダー** — 1 曲目を選び、推薦を辿って流れを構築。繋ぎごとのピッチ差・キー関係・エナジー変化を確認でき、テキストで書き出せます。
 - **Docker 対応** — 開発用（ホットリロード）と本番用（standalone ビルド）の 2 構成。
 
@@ -171,6 +172,51 @@ curl -X POST http://localhost:3000/api/import/rekordbox \
 
 `dryRun=true`（既定）なら解析結果を返すだけで書き込みません。他に `playlist`（`Crates > Peak Time` のようなパス）、`onDuplicate`（`skip` / `update`）、`defaultEnergy` を受け付けます。
 
+## Spotify 連携
+
+`/spotify` で設定します。**任意機能**なので、設定しなくてもアプリは問題なく動きます。
+
+### 重要: BPM とキーは取得できません
+
+Spotify は **2024 年 11 月 27 日に Audio Features / Audio Analysis を廃止**しました。`tempo`・`key`/`mode`・`energy` を返していたのがこの API です。2024 年 11 月 27 日時点で拡張クオータを持っていたアプリ以外は 403 になり、2025 年 5 月にはさらに厳格化されて拡張アクセスに月間アクティブユーザー 25 万人が必要になりました。新規アプリが取得できる見込みはありません。
+
+したがって **BPM・Camelot キー・エナジーは rekordbox インポートか手入力で登録**してください。Spotify は補助的な役割です。
+
+| 使えるもの | 使えないもの（403） |
+|---|---|
+| 検索、トラック/アルバム情報 | Audio Features（BPM・キー・エナジー） |
+| プレイリストの作成・編集 | Audio Analysis |
+| OAuth 認証 | Recommendations / Related Artists |
+
+### セットアップ
+
+1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) で Create app
+2. Redirect URI に `http://127.0.0.1:3000/api/spotify/callback` を登録
+   （Spotify は `http://localhost` を許可しないため、ループバックは `127.0.0.1` を使います）
+3. `.env` に `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` を設定
+4. `docker compose restart app` で再起動
+
+手順はアプリの `/spotify` 画面にも表示されます。
+
+### できること
+
+- **曲の紐付け** — タイトルとアーティストで検索し、一致度の高いものを自動で紐付けます。紐付くとライブラリ一覧と詳細にジャケット画像が出ます。判定が微妙なものは「要確認」として候補を並べ、手動で選べます。
+- **セットの書き出し** — セットリストビルダーから Spotify プレイリストを作成します。曲順はセットのままです。紐付いていない曲は除外され、件数が表示されます。
+
+紐付けは Client Credentials（アプリ認証）だけで動くので、**検索と紐付けにアカウント連携は不要**です。プレイリスト作成のときだけ OAuth が必要になります。
+
+### マッチングの判定
+
+`src/lib/spotify/match.ts` が文字バイグラムの Dice 係数でスコアリングします。`(Original Mix)` `- Extended Mix` `[Club Edit]` `feat. ...` やアクセント記号は比較前に落とします。
+
+曲尺の差も見ており、**60 秒以上ずれている場合は自動紐付けしません**（6 分のクラブミックスに 3 分の Radio Edit が紐付くのを防ぐため）。
+
+判定の挙動は認証情報なしで確認できます。
+
+```bash
+docker compose exec app npx tsx scripts/check-spotify-match.ts
+```
+
 ## API
 
 | メソッド | パス | 説明 |
@@ -182,6 +228,14 @@ curl -X POST http://localhost:3000/api/import/rekordbox \
 | `DELETE` | `/api/tracks/:id` | 削除 |
 | `GET` | `/api/tracks/:id/recommendations` | 次曲推薦 |
 | `POST` | `/api/import/rekordbox` | rekordbox XML の解析・インポート |
+| `GET` | `/api/spotify/status` | 設定状況・連携状況・紐付け件数 |
+| `GET` | `/api/spotify/connect` | Spotify の認可画面へリダイレクト |
+| `GET` | `/api/spotify/callback` | OAuth コールバック |
+| `POST` | `/api/spotify/disconnect` | 連携解除（曲の紐付けは残る） |
+| `GET` | `/api/spotify/search` | 曲を検索（`title`+`artist` 指定なら一致度付き） |
+| `POST` | `/api/spotify/match` | 未紐付けの曲を一括マッチング（`dryRun` 対応） |
+| `POST` | `/api/spotify/playlists` | セットをプレイリストとして作成 |
+| `POST` / `DELETE` | `/api/tracks/:id/spotify` | 曲の紐付け / 解除 |
 
 推薦 API のクエリ:
 
@@ -218,8 +272,10 @@ src/
     import/              rekordbox インポート
     setlist/             セットリストビルダー
     camelot/             Camelot ホイール
+    spotify/             Spotify 連携設定・一括マッチング
     api/tracks/          REST API
     api/import/          インポート API
+    api/spotify/         Spotify API
   components/            UI コンポーネント
   hooks/                 推薦取得フック
   lib/
@@ -227,6 +283,13 @@ src/
     bpm.ts               テンポ適合
     recommend.ts         推薦エンジン（純粋関数）
     rekordbox.ts         rekordbox XML パーサ
+    spotify/
+      config.ts          環境変数
+      auth.ts            OAuth・トークン管理
+      api.ts             Web API ラッパー
+      match.ts           曲名マッチング（純粋関数）
+scripts/
+  check-spotify-match.ts マッチング判定の確認
     validation.ts        zod スキーマ
     prisma.ts            Prisma クライアント
 docker/

@@ -14,6 +14,9 @@ export interface TrackDTO {
   releaseYear: number | null;
   label: string | null;
   notes: string | null;
+  spotifyId: string | null;
+  spotifyUrl: string | null;
+  albumArtUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +35,9 @@ export function toTrackDTO(track: Track): TrackDTO {
     releaseYear: track.releaseYear,
     label: track.label,
     notes: track.notes,
+    spotifyId: track.spotifyId,
+    spotifyUrl: track.spotifyUrl,
+    albumArtUrl: track.albumArtUrl,
     createdAt: track.createdAt.toISOString(),
     updatedAt: track.updatedAt.toISOString(),
   };
