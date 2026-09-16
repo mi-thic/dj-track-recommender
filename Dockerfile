@@ -13,10 +13,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 依存関係
 ############################
 FROM base AS deps
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 # postinstall の prisma generate に schema が必要
 COPY prisma ./prisma
-RUN npm install
+RUN npm ci
 
 ############################
 # 開発サーバー (hot reload)

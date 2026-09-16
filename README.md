@@ -173,8 +173,25 @@ docker/
   migrate.sh             起動時のスキーマ適用 / シード
 ```
 
+## 既知の脆弱性アドバイザリ
+
+`npm audit` に残る 5 件は、いずれも意図的に据え置いています。
+
+| パッケージ | 経路 | 対応 |
+|---|---|---|
+| `postcss` | `next` にバンドルされたもの | 解消には Next.js 16 へのメジャー更新が必要。ビルド時のみ使われ、攻撃者が CSS を注入できる経路が無いため据え置き |
+| `deepmerge-ts` → `@prisma/config` → `prisma` | devDependency（Prisma CLI） | npm の提案は `prisma@6.12.0` へのダウングレード。ローカル CLI の設定マージでの stack exhaustion であり、ダウングレードの方が不利益が大きいため据え置き |
+
+`next` は critical だった RCE 系 advisory を解消するため `15.5.25` に更新済み、`sharp` も修正版に更新済みです。
+
 ## 補足
 
 - `src/generated/prisma` は `prisma generate` で生成されます（Git 管理外）。初回は `npm install` の postinstall で自動生成されます。
+- `npm run build`（型チェック込み）は Docker 上で成功を確認済みです。ホストに Node.js が無い場合は次で実行できます。
+
+  ```bash
+  docker compose run --rm --no-deps app npm run build
+  ```
+
 - 日本語を含むパス（`デスクトップ`、`DJアプリ`）に置いたまま Docker のバインドマウントを使うと、環境によっては認識されないことがあります。その場合はプロジェクトを `C:\dev\dj-app` のような ASCII のパスに移動してください。
 - 推薦は候補全件を走査する実装です。数千曲規模までは問題ありませんが、それ以上になる場合は BPM 帯での事前絞り込みを入れてください。
