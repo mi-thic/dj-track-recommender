@@ -205,9 +205,14 @@ export interface CreatedPlaylist {
   url: string;
 }
 
+/**
+ * プレイリストを作成する。
+ *
+ * NOTE: 2026-02-11 の移行で `POST /users/{user_id}/playlists` は 403 になった。
+ * 現在は `POST /me/playlists` を使う。
+ */
 export async function createPlaylist(
   userToken: string,
-  userId: string,
   name: string,
   description: string,
   isPublic: boolean,
@@ -216,9 +221,14 @@ export async function createPlaylist(
     id: string;
     name: string;
     external_urls?: { spotify?: string };
-  }>(`/users/${encodeURIComponent(userId)}/playlists`, userToken, {
+  }>("/me/playlists", userToken, {
     method: "POST",
-    body: JSON.stringify({ name, description, public: isPublic }),
+    body: JSON.stringify({
+      name,
+      public: isPublic,
+      // 空文字を送ると説明が "null" と表示されることがあるので省略する
+      ...(description ? { description } : {}),
+    }),
   });
 
   return {
@@ -228,7 +238,12 @@ export async function createPlaylist(
   };
 }
 
-/** 1 リクエストあたり 100 件までなので分割して送る */
+/**
+ * プレイリストに曲を追加する。1 リクエストあたり 100 件までなので分割して送る。
+ *
+ * NOTE: 2026-02-11 の移行で `/playlists/{id}/tracks` は 403 になった。
+ * 現在は `/playlists/{id}/items` を使う。
+ */
 export async function addTracksToPlaylist(
   userToken: string,
   playlistId: string,
@@ -237,7 +252,7 @@ export async function addTracksToPlaylist(
   let added = 0;
   for (let i = 0; i < uris.length; i += 100) {
     const chunk = uris.slice(i, i + 100);
-    await spotifyFetch(`/playlists/${encodeURIComponent(playlistId)}/tracks`, userToken, {
+    await spotifyFetch(`/playlists/${encodeURIComponent(playlistId)}/items`, userToken, {
       method: "POST",
       body: JSON.stringify({ uris: chunk }),
     });

@@ -205,6 +205,15 @@ Spotify は **2024 年 11 月 27 日に Audio Features / Audio Analysis を廃�
 
 紐付けは Client Credentials（アプリ認証）だけで動くので、**検索と紐付けにアカウント連携は不要**です。プレイリスト作成のときだけ OAuth が必要になります。
 
+### 使用エンドポイント（2026-02-11 の移行後）
+
+Spotify は 2026 年 2 月 11 日にプレイリスト系のエンドポイントを変更しました。旧エンドポイントはスコープが揃っていても 403 を返します。
+
+| 用途 | 使うもの | 旧（403 になる） |
+|---|---|---|
+| 作成 | `POST /v1/me/playlists` | `POST /v1/users/{user_id}/playlists` |
+| 曲の追加 | `POST /v1/playlists/{id}/items` | `POST /v1/playlists/{id}/tracks` |
+
 ### マッチングの判定
 
 `src/lib/spotify/match.ts` が文字バイグラムの Dice 係数でスコアリングします。`(Original Mix)` `- Extended Mix` `[Club Edit]` `feat. ...` やアクセント記号は比較前に落とします。

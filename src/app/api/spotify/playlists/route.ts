@@ -1,12 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import {
-  addTracksToPlaylist,
-  createPlaylist,
-  getCurrentUser,
-  SpotifyApiError,
-} from "@/lib/spotify/api";
+import { addTracksToPlaylist, createPlaylist, SpotifyApiError } from "@/lib/spotify/api";
 import { getUserAccessToken, SpotifyAuthError } from "@/lib/spotify/auth";
 
 export const dynamic = "force-dynamic";
@@ -98,8 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await getCurrentUser(userToken);
-    const playlist = await createPlaylist(userToken, user.id, name, description, isPublic);
+    const playlist = await createPlaylist(userToken, name, description, isPublic);
     const added = await addTracksToPlaylist(userToken, playlist.id, uris);
 
     return NextResponse.json({
