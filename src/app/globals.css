@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-deck-950: #07070c;
+  --color-deck-900: #0d0d16;
+  --color-deck-850: #12121e;
+  --color-deck-800: #191926;
+  --color-deck-700: #262636;
+  --color-deck-600: #3a3a4d;
+  --color-deck-400: #8b8ba7;
+  --color-deck-200: #c9c9dc;
+
+  --color-neon: #22d3ee;
+  --color-neon-soft: #67e8f9;
+  --color-magenta: #f472b6;
+  --color-amber-glow: #fbbf24;
+  --color-lime-glow: #a3e635;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 12% -10%, rgba(34, 211, 238, 0.13), transparent 60%),
+    radial-gradient(800px 500px at 88% 0%, rgba(244, 114, 182, 0.1), transparent 55%),
+    var(--color-deck-950);
+  color: var(--color-deck-200);
+}
+
+/* 数値（BPM やスコア）は等幅で読みやすく */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-deck-900);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-deck-700);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-deck-600);
+}
+
+input,
+select,
+textarea {
+  color-scheme: dark;
+}

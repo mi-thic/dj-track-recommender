@@ -1,0 +1,53 @@
+# 本番相当: standalone ビルドで起動する
+#   docker compose -f docker-compose.prod.yml up --build
+#   → http://localhost:3000
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: dj-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dj}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-djpass}
+      POSTGRES_DB: ${POSTGRES_DB:-djapp}
+    volumes:
+      - db-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dj} -d ${POSTGRES_DB:-djapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # マイグレーション専用の使い捨てサービス。完了してから app が起動する。
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: sh ./docker/migrate.sh
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dj}:${POSTGRES_PASSWORD:-djpass}@db:5432/${POSTGRES_DB:-djapp}?schema=public
+      SEED_ON_START: ${SEED_ON_START:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    container_name: dj-app-prod
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dj}:${POSTGRES_PASSWORD:-djpass}@db:5432/${POSTGRES_DB:-djapp}?schema=public
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data-prod:

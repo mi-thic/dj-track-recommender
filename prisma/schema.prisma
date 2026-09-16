@@ -1,0 +1,47 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// DJ ライブラリの 1 曲
+model Track {
+  id String @id @default(cuid())
+
+  title  String
+  artist String
+
+  /// BPM（小数可: 128.5 など）
+  bpm Float
+
+  /// Camelot キー表記（1A〜12A / 1B〜12B）
+  camelot String
+
+  /// 一般的な調表記（"Am" / "C" など）。任意入力・表示用
+  musicalKey String?
+
+  genre String?
+
+  /// エナジーレベル 1〜10（フロアの熱量）
+  energy Int @default(5)
+
+  /// 曲尺（秒）
+  durationSec Int?
+
+  releaseYear Int?
+  label       String?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([title, artist])
+  @@index([bpm])
+  @@index([camelot])
+  @@index([energy])
+}
