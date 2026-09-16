@@ -22,9 +22,15 @@ const CENTER = SIZE / 2;
 const OUTER = { r1: 164, r2: 118 }; // B（メジャー）
 const INNER = { r1: 112, r2: 64 }; // A（マイナー）
 
+// Math.cos/sin の結果は Node と ブラウザで最終桁が食い違うことがあり、
+// そのまま SVG 座標にすると hydration mismatch になる。必ず丸めてから使う。
+function round(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
 function polar(radius: number, angleDeg: number): [number, number] {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
-  return [CENTER + radius * Math.cos(rad), CENTER + radius * Math.sin(rad)];
+  return [round(CENTER + radius * Math.cos(rad)), round(CENTER + radius * Math.sin(rad))];
 }
 
 function sectorPath(rOuter: number, rInner: number, startDeg: number, endDeg: number): string {
@@ -86,10 +92,12 @@ export function CamelotWheel({ counts = {} }: Props) {
                   }
                 }}
               >
+                {/* SVG の <title> は React がコメント区切りを挿入できないため、
+                    必ず 1 つのテキストノードにまとめる（複数だと hydration が壊れる） */}
                 <title>
-                  {camelot}（{toMusicalKey(camelot)}）
-                  {count > 0 ? ` · ${count} 曲` : ""}
-                  {relation ? ` · ${relation.label}` : ""}
+                  {`${camelot}（${toMusicalKey(camelot)}）` +
+                    (count > 0 ? ` · ${count} 曲` : "") +
+                    (relation ? ` · ${relation.label}` : "")}
                 </title>
                 <path
                   d={sectorPath(ring.r1, ring.r2, start, end)}
