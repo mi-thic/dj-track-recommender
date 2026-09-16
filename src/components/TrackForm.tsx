@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { ALL_CAMELOT_KEYS, toMusicalKey } from "@/lib/camelot";
 import { formatDuration, parseDuration } from "@/lib/format";
+import { mergeGenreSuggestions } from "@/lib/genres";
 import type { TrackDTO } from "@/lib/types";
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   track?: TrackDTO;
   /** 保存後の遷移先。既定は一覧 */
   redirectTo?: string;
+  /** ジャンル入力の候補。ライブラリにあるものを渡すと優先表示される */
+  genreSuggestions?: string[];
 }
 
 interface FormState {
@@ -48,9 +51,10 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-xs font-medium text-deck-400";
 
-export function TrackForm({ track, redirectTo }: Props) {
+export function TrackForm({ track, redirectTo, genreSuggestions = [] }: Props) {
   const router = useRouter();
   const isEdit = Boolean(track);
+  const genreOptions = mergeGenreSuggestions(genreSuggestions);
 
   const [form, setForm] = useState<FormState>(() => initialState(track));
   const [submitting, setSubmitting] = useState(false);
@@ -210,12 +214,13 @@ export function TrackForm({ track, redirectTo }: Props) {
             maxLength={60}
           />
           <datalist id="genre-suggestions">
-            {["House", "Tech House", "Techno", "Progressive House", "Melodic Techno", "Drum & Bass", "Trance", "Disco", "Hip Hop"].map(
-              (g) => (
-                <option key={g} value={g} />
-              ),
-            )}
+            {genreOptions.map((genre) => (
+              <option key={genre} value={genre} />
+            ))}
           </datalist>
+          <p className="mt-1 text-[11px] text-deck-600">
+            候補 {genreOptions.length} 件から選べます。一覧に無いものは自由に入力できます。
+          </p>
         </div>
 
         <div>

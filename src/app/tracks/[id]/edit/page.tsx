@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TrackForm } from "@/components/TrackForm";
+import { listLibraryGenres } from "@/lib/library";
 import { prisma } from "@/lib/prisma";
 import { toTrackDTO } from "@/lib/types";
 
@@ -16,6 +17,7 @@ export default async function EditTrackPage({ params }: PageProps) {
   if (!track) notFound();
 
   const dto = toTrackDTO(track);
+  const genres = await listLibraryGenres();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -28,7 +30,7 @@ export default async function EditTrackPage({ params }: PageProps) {
       </div>
 
       <div className="rounded-xl border border-deck-700/70 bg-deck-900/50 p-5 sm:p-6">
-        <TrackForm track={dto} redirectTo={`/tracks/${dto.id}`} />
+        <TrackForm track={dto} redirectTo={`/tracks/${dto.id}`} genreSuggestions={genres} />
       </div>
     </div>
   );

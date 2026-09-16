@@ -8,6 +8,7 @@ import { SpotifyTrackLink } from "@/components/SpotifyTrackLink";
 import { bpmRange, formatBpm } from "@/lib/bpm";
 import { getCompatibleKeys, toMusicalKey } from "@/lib/camelot";
 import { formatDuration } from "@/lib/format";
+import { listLibraryGenres } from "@/lib/library";
 import { prisma } from "@/lib/prisma";
 import { toTrackDTO } from "@/lib/types";
 
@@ -29,13 +30,7 @@ export default async function TrackDetailPage({ params }: PageProps) {
 
   const dto = toTrackDTO(track);
 
-  const genreRows = await prisma.track.findMany({
-    where: { genre: { not: null } },
-    distinct: ["genre"],
-    select: { genre: true },
-    orderBy: { genre: "asc" },
-  });
-  const genres = genreRows.map((row) => row.genre).filter((g): g is string => !!g);
+  const genres = await listLibraryGenres();
 
   const range = bpmRange(dto.bpm, 8);
   const compatibleKeys = getCompatibleKeys(dto.camelot);
