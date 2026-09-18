@@ -7,7 +7,7 @@
 # lightningcss などのネイティブバイナリは libc ごとに別パッケージになっており、
 # musl 上で生成した package-lock.json には glibc 用が記録されない。
 # CI・macOS・一般的な Linux と libc を揃えることで lockfile を 1 本に保つ。
-FROM node:22-slim AS base
+FROM node:25-slim AS base
 # Prisma のクエリエンジンは OpenSSL に依存する
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl ca-certificates \
