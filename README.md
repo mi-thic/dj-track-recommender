@@ -1,6 +1,10 @@
 # DJ Track Recommender
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向けの楽曲管理アプリ。
+
+rekordbox のコレクションを取り込み、テンポ・ハーモニック適合・エナジー遷移の 3 軸でスコアリングして次の 1 曲を提案します。組んだセットは Spotify のプレイリストとして書き出せます。
 
 | | |
 |---|---|
@@ -33,6 +37,12 @@ BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向け�
 
 ### A. Docker で起動する（推奨）
 
+環境変数ファイルを用意してから起動します（`.env` は Git 管理外なので、クローン直後は存在しません）。
+
+```bash
+cp .env.example .env
+```
+
 ```bash
 docker compose up --build
 ```
@@ -60,7 +70,11 @@ docker compose down -v
 
 ### B. ローカルの Node で起動する
 
-PostgreSQL を用意し、`.env` の `DATABASE_URL` を自分の環境に合わせてから:
+PostgreSQL を用意し、`.env` を作って `DATABASE_URL` を自分の環境に合わせます。
+
+```bash
+cp .env.example .env
+```
 
 ```bash
 npm install
@@ -193,7 +207,7 @@ Spotify は **2024 年 11 月 27 日に Audio Features / Audio Analysis を廃�
 1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) で Create app
 2. Redirect URI に `http://127.0.0.1:3000/api/spotify/callback` を登録
    （Spotify は `http://localhost` を許可しないため、ループバックは `127.0.0.1` を使います）
-3. `.env` に `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` を設定
+3. `.env`（未作成なら `cp .env.example .env`）に `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` を設定
 4. `docker compose restart app` で再起動
 
 手順はアプリの `/spotify` 画面にも表示されます。
@@ -292,6 +306,12 @@ src/
     bpm.ts               テンポ適合
     recommend.ts         推薦エンジン（純粋関数）
     rekordbox.ts         rekordbox XML パーサ
+    genres.ts            ジャンル候補
+    library.ts           ライブラリ集計（サーバー専用）
+    validation.ts        zod スキーマ
+    types.ts             DTO 変換
+    format.ts            曲尺の表示・パース
+    prisma.ts            Prisma クライアント
     spotify/
       config.ts          環境変数
       auth.ts            OAuth・トークン管理
@@ -299,33 +319,37 @@ src/
       match.ts           曲名マッチング（純粋関数）
 scripts/
   check-spotify-match.ts マッチング判定の確認
-    validation.ts        zod スキーマ
-    prisma.ts            Prisma クライアント
 docker/
   migrate.sh             起動時のスキーマ適用 / シード
 ```
 
 ## 既知の脆弱性アドバイザリ
 
-`npm audit` に残る 5 件は、いずれも意図的に据え置いています。
+`npm audit` に残るものは、いずれも意図的に据え置いています。現状は次で確認できます。
+
+```bash
+docker compose exec app npm audit
+```
 
 | パッケージ | 経路 | 対応 |
 |---|---|---|
 | `postcss` | `next` にバンドルされたもの | 解消には Next.js 16 へのメジャー更新が必要。ビルド時のみ使われ、攻撃者が CSS を注入できる経路が無いため据え置き |
 | `deepmerge-ts` → `@prisma/config` → `prisma` | devDependency（Prisma CLI） | npm の提案は `prisma@6.12.0` へのダウングレード。ローカル CLI の設定マージでの stack exhaustion であり、ダウングレードの方が不利益が大きいため据え置き |
 
-`next` は critical だった RCE 系 advisory を解消するため `15.5.25` に更新済み、`sharp` も修正版に更新済みです。
+critical だった `next` の RCE 系 advisory を避けるため、`next` は `^15.5.25` を要求しています。`sharp` も修正版を使います。
 
 ## 補足
 
 - `src/generated/prisma` は `prisma generate` で生成されます（Git 管理外）。初回は `npm install` の postinstall で自動生成されます。
-- `npm run build`（型チェック込み）は Docker 上で成功を確認済みです。ホストに Node.js が無い場合は次で実行できます。
+- `npm run build` は型チェックを兼ねています。ホストに Node.js を入れていない場合は次で実行できます。
 
   ```bash
   docker compose run --rm --no-deps app npm run build
   ```
 
-- 日本語を含むパス（`デスクトップ`、`DJアプリ`）に置いたまま Docker のバインドマウントを使うと、環境によっては認識されないことがあります。その場合はプロジェクトを `C:\dev\dj-app` のような ASCII のパスに移動してください。
+  なお `next dev` と同じ `.next` を使うため、開発サーバーの起動中にビルドすると開発サーバー側の表示が壊れることがあります。その場合は `docker compose restart app` で復旧します。
+
+- 日本語など非 ASCII 文字を含むパスに置くと、環境によっては Docker のバインドマウントが認識されないことがあります。その場合は `C:\dev\dj-app` のような ASCII のパスに移動してください。
 - 推薦は候補全件を走査する実装です。数千曲規模までは問題ありませんが、それ以上になる場合は BPM 帯での事前絞り込みを入れてください。
 
 ## ライセンス
