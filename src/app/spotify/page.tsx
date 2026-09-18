@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { SpotifyAttribution } from "@/components/SpotifyAttribution";
 import { SpotifySettings } from "@/components/SpotifySettings";
 
 export const metadata = { title: "Spotify 連携 | DJ Track Recommender" };
@@ -32,6 +33,8 @@ export default function SpotifyPage() {
       <Suspense fallback={<p className="text-sm text-deck-600">読み込み中…</p>}>
         <SpotifySettings />
       </Suspense>
+
+      <SpotifyAttribution />
     </div>
   );
 }

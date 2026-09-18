@@ -15,6 +15,9 @@
   --color-magenta: #f472b6;
   --color-amber-glow: #fbbf24;
   --color-lime-glow: #a3e635;
+
+  /* Spotify ブランドカラー。帰属表示以外には使わない */
+  --color-spotify: #1db954;
 }
 
 :root {

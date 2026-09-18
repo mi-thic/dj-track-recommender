@@ -348,7 +348,7 @@ docker/
 
 本プロジェクトは個人が開発した非公式のツールであり、以下のいずれとも提携・承認・後援の関係にありません。
 
-- **Spotify** — Spotify は Spotify AB の商標です。本アプリを利用するには、各自が [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) でアプリを登録し、Spotify Developer Terms of Service に同意する必要があります。本アプリの MIT ライセンスは Spotify の利用規約を上書きするものではありません。楽曲のメタデータおよびジャケット画像は Spotify から提供されるものであり、表示される楽曲は Spotify 上のページへリンクしています。
+- **Spotify** — Spotify は Spotify AB の商標です。アプリ内では、Spotify のコンテンツを表示する画面（`/spotify`、ライブラリ一覧、楽曲詳細）に Spotify ロゴによる帰属表示を出し、楽曲は Spotify のページへリンクしています。本アプリを利用するには、各自が [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) でアプリを登録し、Spotify Developer Terms of Service に同意する必要があります。本アプリの MIT ライセンスは Spotify の利用規約を上書きするものではありません。楽曲のメタデータおよびジャケット画像は Spotify から提供されるものであり、表示される楽曲は Spotify 上のページへリンクしています。
 - **rekordbox** — rekordbox は AlphaTheta Corporation の商標です。本アプリはユーザーが書き出した XML ファイルを読み取るだけで、rekordbox 本体やそのデータベースには一切アクセスしません。
 
 サンプルデータ（`prisma/seed.ts`）の楽曲名・アーティスト名はすべて架空のものです。

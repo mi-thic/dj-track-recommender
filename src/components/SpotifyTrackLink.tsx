@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { SpotifyLogo } from "@/components/SpotifyLogo";
 import { formatDuration } from "@/lib/format";
 import type { TrackDTO } from "@/lib/types";
 
@@ -87,7 +88,9 @@ export function SpotifyTrackLink({ track }: { track: TrackDTO }) {
   return (
     <section className="rounded-xl border border-deck-700/70 bg-deck-900/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-medium text-deck-400">Spotify</h2>
+        <h2>
+          <SpotifyLogo size={18} withWordmark />
+        </h2>
         {track.spotifyId ? (
           <button
             type="button"
@@ -127,8 +130,9 @@ export function SpotifyTrackLink({ track }: { track: TrackDTO }) {
             href={track.spotifyUrl ?? `https://open.spotify.com/track/${track.spotifyId}`}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-sm text-neon transition hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-neon transition hover:underline"
           >
+            <SpotifyLogo size={21} decorative />
             Spotify で開く →
           </a>
         </div>

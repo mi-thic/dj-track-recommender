@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { CamelotBadge } from "@/components/CamelotBadge";
+import { SpotifyAttribution } from "@/components/SpotifyAttribution";
 import { TrackTable } from "@/components/TrackTable";
 import { formatBpm } from "@/lib/bpm";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,9 @@ export default async function LibraryPage() {
     keyCounts.set(track.camelot, (keyCounts.get(track.camelot) ?? 0) + 1);
   }
   const topKeys = [...keyCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+  // Spotify のジャケットを表示しているときは帰属表示を出す
+  const hasAlbumArt = tracks.some((track) => track.albumArtUrl !== null);
 
   return (
     <div className="space-y-8">
@@ -78,7 +82,10 @@ export default async function LibraryPage() {
           </Link>
         </section>
       ) : (
-        <TrackTable tracks={tracks} />
+        <>
+          <TrackTable tracks={tracks} />
+          {hasAlbumArt ? <SpotifyAttribution variant="compact" /> : null}
+        </>
       )}
     </div>
   );
