@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "BPM / Camelot キーに基づく DJ 向け楽曲管理・次曲推薦アプリ",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

@@ -26,10 +26,10 @@ BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向け�
 
 ### 前提
 
-現在この PC には **Node.js も Docker もインストールされていません**。どちらか一方を入れてください。
+どちらか一方があれば動きます。
 
-- Docker だけで動かす（Node 不要・推奨） → [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- ローカルの Node で動かす → [Node.js 20 以上](https://nodejs.org/) と PostgreSQL 14 以上
+- **Docker のみ**（Node 不要・推奨） → [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- **ローカルの Node** → [Node.js 20 以上](https://nodejs.org/) と PostgreSQL 14 以上
 
 ### A. Docker で起動する（推奨）
 
@@ -327,3 +327,28 @@ docker/
 
 - 日本語を含むパス（`デスクトップ`、`DJアプリ`）に置いたまま Docker のバインドマウントを使うと、環境によっては認識されないことがあります。その場合はプロジェクトを `C:\dev\dj-app` のような ASCII のパスに移動してください。
 - 推薦は候補全件を走査する実装です。数千曲規模までは問題ありませんが、それ以上になる場合は BPM 帯での事前絞り込みを入れてください。
+
+## ライセンス
+
+[MIT License](LICENSE) © 2026 mi-thic
+
+### 依存ライブラリについて
+
+依存 125 パッケージのうち大半は MIT / Apache-2.0 / ISC / BSD の許諾型ライセンスで、本プロジェクトのライセンス選択を制約するものはありません。以下だけ補足します。
+
+| パッケージ | ライセンス | 補足 |
+|---|---|---|
+| `@img/sharp-libvips-*` | LGPL-3.0-or-later | sharp のプリビルドバイナリ。`next/image` 用の optional 依存で、本アプリはジャケット表示に素の `<img>` を使っているため実行時には利用しません |
+| `lightningcss` | MPL-2.0 | Tailwind CSS のビルド時のみ使う開発依存 |
+| `caniuse-lite` | CC-BY-4.0 | ブラウザ対応データ |
+
+**Docker イメージを再配布する場合**は、イメージ内に LGPL のバイナリが含まれるため、該当ライセンスの表記を同梱してください（ソースコードのみの配布であれば不要です）。
+
+### 免責・帰属表示
+
+本プロジェクトは個人が開発した非公式のツールであり、以下のいずれとも提携・承認・後援の関係にありません。
+
+- **Spotify** — Spotify は Spotify AB の商標です。本アプリを利用するには、各自が [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) でアプリを登録し、Spotify Developer Terms of Service に同意する必要があります。本アプリの MIT ライセンスは Spotify の利用規約を上書きするものではありません。楽曲のメタデータおよびジャケット画像は Spotify から提供されるものであり、表示される楽曲は Spotify 上のページへリンクしています。
+- **rekordbox** — rekordbox は AlphaTheta Corporation の商標です。本アプリはユーザーが書き出した XML ファイルを読み取るだけで、rekordbox 本体やそのデータベースには一切アクセスしません。
+
+サンプルデータ（`prisma/seed.ts`）の楽曲名・アーティスト名はすべて架空のものです。
