@@ -15,6 +15,28 @@ rekordbox のコレクションを取り込み、テンポ・ハーモニック�
 | スタイル | Tailwind CSS 4 |
 | 実行環境 | Docker / Docker Compose |
 
+## 画面
+
+### 次曲推薦
+
+現在の曲に対して、テンポ・キー・エナジーの適合度と推薦理由を並べます。
+
+![次曲推薦の画面](docs/screenshots/recommend.png)
+
+### ライブラリ
+
+BPM 帯・ジャンル・キーで絞り込み、並べ替えられます。
+
+![ライブラリの画面](docs/screenshots/library.png)
+
+### Camelot ホイール
+
+キーをクリックすると、繋げられるキーと自分のライブラリの曲数が出ます。
+
+![Camelot ホイールの画面](docs/screenshots/camelot.png)
+
+> 画面はサンプルデータ（`prisma/seed.ts` の架空の 28 曲）で撮影しています。
+
 ## 機能
 
 - **楽曲登録** — タイトル / アーティスト / BPM / Camelot キー / エナジー / ジャンル / 曲尺 / レーベル / メモ。一覧からの編集・削除にも対応。
@@ -321,6 +343,8 @@ scripts/
   check-spotify-match.ts マッチング判定の確認
 docker/
   migrate.sh             起動時のスキーマ適用 / シード
+docs/
+  screenshots/           README 用のスクリーンショット
 ```
 
 ## 既知の脆弱性アドバイザリ

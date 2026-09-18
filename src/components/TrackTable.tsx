@@ -44,6 +44,10 @@ export function TrackTable({ tracks }: { tracks: TrackDTO[] }) {
     [tracks],
   );
 
+  // Spotify を使っていないライブラリで空の枠が並ばないよう、
+  // 1 曲でもジャケットがあるときだけ画像の列を作る
+  const showArt = useMemo(() => tracks.some((t) => t.albumArtUrl !== null), [tracks]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const min = bpmMin ? Number(bpmMin) : null;
@@ -202,18 +206,20 @@ export function TrackTable({ tracks }: { tracks: TrackDTO[] }) {
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    {track.albumArtUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={track.albumArtUrl}
-                        alt=""
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 shrink-0 rounded"
-                      />
-                    ) : (
-                      <span className="h-8 w-8 shrink-0 rounded bg-deck-800" aria-hidden />
-                    )}
+                    {showArt ? (
+                      track.albumArtUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={track.albumArtUrl}
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 shrink-0 rounded"
+                        />
+                      ) : (
+                        <span className="h-8 w-8 shrink-0 rounded bg-deck-800" aria-hidden />
+                      )
+                    ) : null}
                     <Link
                       href={`/tracks/${track.id}`}
                       className="font-medium text-white transition hover:text-neon"
