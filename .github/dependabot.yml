@@ -10,11 +10,21 @@ updates:
       # 細かい PR が乱立しないようまとめる
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # 型定義は実行環境の Node に合わせる。先行させると
+      # 実在しない API が型上は使えてしまう
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: "/"
     schedule:
       interval: monthly
+    ignore:
+      # Node は LTS（偶数バージョン）に留める。奇数は Current リリースで
+      # サポート期間が短い
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
