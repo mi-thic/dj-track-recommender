@@ -3,9 +3,15 @@
 ############################
 # 共通ベース
 ############################
-FROM node:22-alpine AS base
+# NOTE: Alpine (musl) ではなく Debian (glibc) を使う。
+# lightningcss などのネイティブバイナリは libc ごとに別パッケージになっており、
+# musl 上で生成した package-lock.json には glibc 用が記録されない。
+# CI・macOS・一般的な Linux と libc を揃えることで lockfile を 1 本に保つ。
+FROM node:22-slim AS base
 # Prisma のクエリエンジンは OpenSSL に依存する
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -45,7 +51,7 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+RUN groupadd -g 1001 nodejs && useradd -m -u 1001 -g nodejs nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

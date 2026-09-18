@@ -392,6 +392,7 @@ critical だった `next` の RCE 系 advisory を避けるため、`next` は `
 
   なお `next dev` と同じ `.next` を使うため、開発サーバーの起動中にビルドすると開発サーバー側の表示が壊れることがあります。その場合は `docker compose restart app` で復旧します。
 
+- `package-lock.json` は glibc 環境で生成しています。`lightningcss` などのネイティブバイナリは libc ごとに別パッケージで、musl (Alpine) 上で生成すると glibc 用が記録されず、Ubuntu や macOS で `npm ci` したときにビルドが落ちます。Docker のベースイメージを Debian (`node:22-slim`) にしているのはこのためです。
 - 日本語など非 ASCII 文字を含むパスに置くと、環境によっては Docker のバインドマウントが認識されないことがあります。その場合は `C:\dev\dj-app` のような ASCII のパスに移動してください。
 - 推薦は候補全件を走査する実装です。数千曲規模までは問題ありませんが、それ以上になる場合は BPM 帯での事前絞り込みを入れてください。
 
