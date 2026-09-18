@@ -1,5 +1,6 @@
 # DJ Track Recommender
 
+[![CI](https://github.com/mi-thic/dj-track-recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/mi-thic/dj-track-recommender/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 BPM と Camelot キーから「次に掛ける曲」を提案する、DJ 向けの楽曲管理アプリ。
@@ -120,7 +121,9 @@ npm run dev
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-`.env` で `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` を上書きできます。本番で使う場合は必ずパスワードを変更してください。
+`.env` で `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` を上書きできます。
+
+> このアプリには認証がありません。手元以外で動かす前に [セキュリティ](#セキュリティ) を必ず読んでください。
 
 ## 推薦ロジック
 
@@ -346,6 +349,22 @@ docker/
 docs/
   screenshots/           README 用のスクリーンショット
 ```
+
+## セキュリティ
+
+**このアプリには認証がありません。** 手元の 1 台で自分のライブラリを管理する前提の設計です。
+
+- API はすべて無認証です。到達できる人は誰でも楽曲を追加・編集・削除でき、Spotify を連携していればそのアカウントにプレイリストを作成できます
+- 開発用の `docker-compose.yml` はアプリを `0.0.0.0:3000` で公開します。同じネットワークの他の端末から見える状態です
+- PostgreSQL は `127.0.0.1:5432` にのみ公開しています（ホストの GUI クライアント用）
+
+インターネットから到達できるサーバーで動かす場合は、最低限これらが必要です。
+
+1. **認証を追加する** — リバースプロキシの Basic 認証、または Next.js の middleware
+2. **`POSTGRES_PASSWORD` を変更する** — `djpass` は開発用の既定値です
+3. **HTTPS を前段に置く** — あわせて Spotify のリダイレクト URI も HTTPS のものに登録し直します
+
+Spotify のアクセストークンとリフレッシュトークンは `SpotifyAccount` テーブルに平文で保存しています。単一ユーザーのローカル用途を想定した割り切りです。共有環境で使う場合は暗号化を追加してください。
 
 ## 既知の脆弱性アドバイザリ
 

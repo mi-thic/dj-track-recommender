@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: 型チェック・ビルド
+    runs-on: ubuntu-latest
+
+    env:
+      # DB には接続しないが、PrismaClient の生成時に必要なので形式だけ満たす値を渡す
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # postinstall で prisma generate が走る
+      - name: 依存をインストール
+        run: npm ci
+
+      - name: 型チェック
+        run: npm run typecheck
+
+      - name: ビルド
+        run: npm run build
+
+      # Spotify の認証情報なしで動く純粋関数のテスト
+      - name: マッチング判定の確認
+        run: npm run check:match

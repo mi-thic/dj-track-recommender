@@ -12,7 +12,8 @@ services:
       POSTGRES_PASSWORD: djpass
       POSTGRES_DB: djapp
     ports:
-      - "5432:5432"
+      # ホストの GUI クライアントから繋ぐ用。LAN に晒さないよう 127.0.0.1 に限定する
+      - "127.0.0.1:5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
