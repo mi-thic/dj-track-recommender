@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { MAX_LENGTH as AUTOSET_MAX_LENGTH, MIN_LENGTH as AUTOSET_MIN_LENGTH } from "./autoset";
 import { isValidCamelot, normalizeCamelot } from "./camelot";
 
 const emptyToNull = (value: unknown) => {
@@ -124,3 +125,28 @@ export const setlistUpdateSchema = setlistWriteSchema.partial();
 
 export type SetlistWriteInput = z.infer<typeof setlistWriteSchema>;
 export type SetlistUpdateInput = z.infer<typeof setlistUpdateSchema>;
+
+/* ------------------------------------------------------------------ */
+/* セットの自動生成                                                    */
+/* ------------------------------------------------------------------ */
+
+export const autosetSchema = z
+  .object({
+    /** 固定する曲。1 曲なら「その曲から組む」、複数なら「続きを組む」 */
+    trackIds: z.array(z.string().min(1)).min(1, "1 曲目を指定してください").max(AUTOSET_MAX_LENGTH),
+    /** 固定した曲を含めた合計曲数 */
+    length: z.number().int().min(AUTOSET_MIN_LENGTH).max(AUTOSET_MAX_LENGTH),
+    shape: z.enum(["arc", "build", "steady", "cooldown"]),
+    maxPitchPercent: z.number().min(0.5).max(30).default(8),
+    allowHalfDouble: z.boolean().default(true),
+    keyCompatibleOnly: z.boolean().default(false),
+    /** セットのテンポを 1 曲目付近に保つ */
+    keepTempo: z.boolean().default(true),
+    genre: z.string().trim().min(1).nullable().optional(),
+  })
+  .refine((input) => input.length > input.trackIds.length, {
+    message: "曲数は今のセットの曲数より多くしてください",
+    path: ["length"],
+  });
+
+export type AutosetInput = z.infer<typeof autosetSchema>;

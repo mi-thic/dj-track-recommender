@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { AutoSetPanel } from "@/components/AutoSetPanel";
 import { CamelotBadge } from "@/components/CamelotBadge";
 import { EnergyMeter } from "@/components/EnergyMeter";
 import { ExportToSpotify } from "@/components/ExportToSpotify";
 import { RecommendControlsBar } from "@/components/RecommendControlsBar";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { SetFlowChart } from "@/components/SetFlowChart";
 import { DEFAULT_CONTROLS, useRecommendations, type RecommendControls } from "@/hooks/useRecommendations";
 import { formatBpm, matchBpm } from "@/lib/bpm";
+import type { AutoSetResult } from "@/lib/autoset";
 import { getCamelotCompatibility } from "@/lib/camelot";
 import { formatDuration } from "@/lib/format";
 import type { SetlistDTO, TrackDTO } from "@/lib/types";
@@ -53,6 +56,9 @@ export function SetlistBuilder() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // 自動生成したときの目標エナジー。セットの先頭がこの曲順のままの間だけ表示する
+  const [autoPlan, setAutoPlan] = useState<{ ids: string[]; targets: number[] } | null>(null);
 
   // 新規作成時の既定名はクライアントで決める（サーバーとのタイムゾーン差で hydration がずれないように）
   useEffect(() => {
@@ -164,6 +170,15 @@ export function SetlistBuilder() {
   }, [allTracks, playedIds, query]);
 
   const totalSeconds = setlist.reduce((sum, track) => sum + (track.durationSec ?? 0), 0);
+
+  // 並べ替えや削除で曲順が変わったら、目標は当てはまらなくなるので出さない（末尾への追加は可）
+  const planTargets =
+    autoPlan && autoPlan.ids.every((id, i) => setlist[i]?.id === id) ? autoPlan.targets : null;
+
+  function applyAutoSet(result: AutoSetResult) {
+    setSetlist(result.tracks);
+    setAutoPlan({ ids: result.tracks.map((track) => track.id), targets: result.targets });
+  }
 
   function moveTrack(index: number, offset: -1 | 1) {
     setSetlist((prev) => {
@@ -366,6 +381,11 @@ export function SetlistBuilder() {
                     <span className="tabular text-sm text-white">{formatBpm(track.bpm)}</span>
                     <CamelotBadge camelot={track.camelot} />
                     <EnergyMeter energy={track.energy} />
+                    {planTargets && index < planTargets.length ? (
+                      <span className="tabular w-14 text-[11px] text-deck-600" title="自動生成の目標エナジー">
+                        目標 {planTargets[index]}
+                      </span>
+                    ) : null}
                     <div className="flex gap-1">
                       <button
                         type="button"
@@ -401,6 +421,12 @@ export function SetlistBuilder() {
           </ol>
         )}
       </section>
+
+      {setlist.length >= 2 ? <SetFlowChart tracks={setlist} targets={planTargets} /> : null}
+
+      {setlist.length >= 1 ? (
+        <AutoSetPanel setlist={setlist} controls={controls} onGenerated={applyAutoSet} />
+      ) : null}
 
       {/* 次の候補 or 1 曲目の選択 */}
       {current ? (
