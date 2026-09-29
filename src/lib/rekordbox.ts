@@ -13,7 +13,7 @@
  *   </DJ_PLAYLISTS>
  */
 
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 
 import { musicalKeyToCamelot, normalizeCamelot, toMusicalKey } from "./camelot";
 
@@ -190,6 +190,17 @@ export function parseRekordboxXml(
     parseTagValue: false,
     trimValues: true,
   });
+
+  // XMLParser は閉じタグが足りなくても例外を出さず、途中までの内容を返す。
+  // 書き出し途中やコピー中断で切れたファイルを「一部の曲だけ」黙って取り込まないよう、
+  // 先に構文を検証する（途中で切れた XML は必ずルートの閉じタグが欠ける）。
+  const validation = XMLValidator.validate(xml);
+  if (validation !== true) {
+    const { msg, line } = validation.err;
+    throw new Error(
+      `XML が壊れているか、途中で切れています（${line} 行目: ${msg}）。rekordbox から書き出し直してください。`,
+    );
+  }
 
   let doc: RawNode;
   try {

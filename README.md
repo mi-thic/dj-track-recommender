@@ -200,6 +200,8 @@ rekordbox にはエナジー項目が無いため、3 つから選べます。
 
 BPM またはキーが未解析の曲は取り込めません。取り込めなかった曲は理由付きで一覧表示されます。
 
+書き出しの途中やコピーの中断で**途切れた XML はエラーになります**（途中までの曲だけが黙って取り込まれることはありません）。その場合は rekordbox から書き出し直してください。
+
 ### API から使う
 
 ```bash
@@ -259,11 +261,7 @@ Spotify は 2026 年 2 月 11 日にプレイリスト系のエンドポイン�
 
 曲尺の差も見ており、**60 秒以上ずれている場合は自動紐付けしません**（6 分のクラブミックスに 3 分の Radio Edit が紐付くのを防ぐため）。
 
-判定の挙動は認証情報なしで確認できます。
-
-```bash
-docker compose exec app npx tsx scripts/check-spotify-match.ts
-```
+判定の挙動はテスト（`tests/spotify-match.test.ts`）で固定しており、認証情報なしで確認できます。
 
 ## API
 
@@ -351,13 +349,28 @@ src/
       auth.ts            OAuth・トークン管理
       api.ts             Web API ラッパー
       match.ts           曲名マッチング（純粋関数）
-scripts/
-  check-spotify-match.ts マッチング判定の確認
+tests/                   単体テスト（node:test）
 docker/
   migrate.sh             起動時のスキーマ適用 / シード
 docs/
   screenshots/           README 用のスクリーンショット
 ```
+
+## テスト
+
+```bash
+docker compose exec app npm test
+```
+
+DB や外部 API を使わない純粋関数を対象にした単体テストです。CI でも毎回実行しています。依存を増やさないよう Node 標準のテストランナー（`node:test`）と `tsx` で動かしています。
+
+| ファイル | 対象 |
+|---|---|
+| `camelot.test.ts` | Camelot の 7 種類の関係判定、12↔1 の折り返し、調表記との相互変換（24 キーの往復） |
+| `bpm.test.ts` | ピッチ調整量と符号、許容幅での減点、ハーフ / ダブルタイム |
+| `recommend.test.ts` | 除外・絞り込み・下限スコア、エナジー遷移、重み変更で順位が変わること |
+| `rekordbox.test.ts` | 3 種類のキー表記、コメント / レーティングからのエナジー、XML の解析と途中で切れたファイルの検出 |
+| `spotify-match.test.ts` | ミックス表記の正規化、自動紐付けの可否、Radio Edit を本家より下に並べること |
 
 ## セキュリティ
 

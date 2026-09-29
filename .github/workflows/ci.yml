@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    name: 型チェック・ビルド
+    name: 型チェック・テスト・ビルド
     runs-on: ubuntu-latest
 
     env:
@@ -34,6 +34,7 @@ jobs:
       - name: ビルド
         run: npm run build
 
-      # Spotify の認証情報なしで動く純粋関数のテスト
-      - name: マッチング判定の確認
-        run: npm run check:match
+      # Camelot 判定・BPM 計算・推薦スコア・rekordbox 解析・Spotify マッチング。
+      # いずれも DB や外部 API を使わない純粋関数のテスト
+      - name: テスト
+        run: npm test
