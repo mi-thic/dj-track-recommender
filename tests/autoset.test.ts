@@ -205,6 +205,18 @@ describe("generateAutoSet", () => {
     assert.deepEqual(ids(result.tracks), ["peak", "keep"]);
   });
 
+  test("キー適合のみを指定すると、点数の高いキー違いの曲より、キーの合う曲を選ぶ", () => {
+    // ランダムなライブラリでは指定が無くても全曲適合になりがちで区別できないため、
+    // 指定の有無で選ぶ曲が変わる状況を作る
+    const S = track("S", 128, "8A");
+    const clash = track("clash", 128, "3A"); // 同テンポだがキーが合わない（65 点）
+    const fits = track("fits", 138, "9A"); // キーは合うがテンポ差が大きい（約 62.6 点）
+    const pick = (keyCompatibleOnly: boolean) =>
+      generateAutoSet([S], [clash, fits], { length: 2, shape: "steady", keyCompatibleOnly }).tracks[1].id;
+    assert.equal(pick(false), "clash", "指定が無ければ、点数どおりキー違いの曲も選ぶ");
+    assert.equal(pick(true), "fits");
+  });
+
   test("キー適合のみを指定すると、全ての繋ぎがハーモニックに合う", () => {
     const result = generateAutoSet([start], pool, { length: 10, shape: "arc", keyCompatibleOnly: true });
     assert.ok(result.transitions.every((t) => t.key.compatible));
@@ -257,6 +269,8 @@ describe("generateAutoSet", () => {
     assert.deepEqual(ids(a.tracks), ids(b.tracks));
   });
 
+  // 計算量が桁違いに悪化していないかの見張り。手元の実測は 150ms 前後で、
+  // CI の実行環境の遅さを見込んでも数倍の余裕がある上限にしている
   test("数千曲のライブラリでも 1 秒以内に組める", () => {
     const big = library(3000, 7);
     const began = performance.now();

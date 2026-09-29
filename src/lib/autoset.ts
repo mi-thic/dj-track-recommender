@@ -10,7 +10,7 @@
  * 曲ごとの目標エナジーにどれだけ近いかで採点する。
  */
 
-import { matchBpm, type BpmMatch } from "./bpm";
+import { matchBpm, tempoFit, type BpmMatch, type TempoRatio } from "./bpm";
 import { getCamelotCompatibility, type CamelotCompatibility } from "./camelot";
 import type { TrackDTO } from "./types";
 
@@ -160,6 +160,22 @@ export interface AutoSetResult {
   stoppedEarly: boolean;
 }
 
+/**
+ * Camelot の関係は 24 × 24 通りしか無いので、判定結果を使い回す。
+ * 1 セットの生成で候補の評価が数十万回走り、毎回キー文字列を解析し直すのが一番重かった。
+ */
+const keyCompatibilityCache = new Map<string, CamelotCompatibility>();
+
+function keyCompatibility(from: string, to: string): CamelotCompatibility {
+  const cacheKey = `${from}>${to}`;
+  let cached = keyCompatibilityCache.get(cacheKey);
+  if (!cached) {
+    cached = getCamelotCompatibility(from, to);
+    keyCompatibilityCache.set(cacheKey, cached);
+  }
+  return cached;
+}
+
 function describeTransition(
   from: TrackDTO,
   to: TrackDTO,
@@ -170,7 +186,7 @@ function describeTransition(
     maxPitchPercent: options.maxPitchPercent,
     allowHalfDouble: options.allowHalfDouble,
   });
-  const key = getCamelotCompatibility(from.camelot, to.camelot);
+  const key = keyCompatibility(from.camelot, to.camelot);
   const fit = energyFit(from.energy, to.energy, target);
   const score =
     bpm.score * AUTOSET_WEIGHTS.bpm + key.score * AUTOSET_WEIGHTS.key + fit * AUTOSET_WEIGHTS.energy;
@@ -178,20 +194,46 @@ function describeTransition(
 }
 
 /**
- * 繋げられない組み合わせは null。
- * テンポが合わない、エナジーが MAX_ENERGY_JUMP を超えて動く、キー適合のみ指定でキーが合わない。
+ * 順位付け用の軽い採点。繋げられない組み合わせは null
+ * （エナジーが MAX_ENERGY_JUMP を超えて動く、テンポが合わない、キー適合のみ指定でキーが合わない）。
+ *
+ * 候補の評価は 1 セットで数十万回走るので、表示用の繋ぎ情報（オブジェクトとラベル文字列）は作らない。
+ * 点数は describeTransition と同じ計算・同じ丸めなので一致する。
  */
-function scoreTransition(
+function quickScore(
   from: TrackDTO,
   to: TrackDTO,
   target: number,
   options: AutoSetOptions,
-): TransitionDetail | null {
-  const detail = describeTransition(from, to, target, options);
-  if (detail.bpm.score <= 0) return null;
+): { score: number; ratio: TempoRatio } | null {
+  // 整数の比較だけで済む判定を先にする
   if (Math.abs(to.energy - from.energy) > MAX_ENERGY_JUMP) return null;
-  if (options.keyCompatibleOnly && !detail.key.compatible) return null;
-  return detail;
+  const tempo = tempoFit(from.bpm, to.bpm, {
+    maxPitchPercent: options.maxPitchPercent,
+    allowHalfDouble: options.allowHalfDouble,
+  });
+  if (!tempo || tempo.score <= 0) return null;
+  const key = keyCompatibility(from.camelot, to.camelot);
+  if (options.keyCompatibleOnly && !key.compatible) return null;
+  const fit = energyFit(from.energy, to.energy, target);
+  const score =
+    tempo.score * AUTOSET_WEIGHTS.bpm + key.score * AUTOSET_WEIGHTS.key + fit * AUTOSET_WEIGHTS.energy;
+  return { score: Math.round(score * 10) / 10, ratio: tempo.ratio };
+}
+
+interface Candidate {
+  track: TrackDTO;
+  score: number;
+  rank: number;
+  scale: number;
+}
+
+/**
+ * 候補の優劣。同点は ID の文字コード順で決める
+ * （ロケール依存の比較は遅いうえ、実行環境の言語設定で順序が変わりうる）。
+ */
+function isBetter(a: Candidate, b: Candidate): boolean {
+  return a.rank > b.rank || (a.rank === b.rank && a.track.id < b.track.id);
 }
 
 interface BeamState {
@@ -211,6 +253,7 @@ interface BeamState {
 }
 
 const pathKey = (state: BeamState) => state.path.map((track) => track.id).join(",");
+const byCodeUnit = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /**
  * prefix（1 曲以上）の続きを、合計 length 曲になるまで自動で組む。
@@ -260,26 +303,34 @@ export function generateAutoSet(
 
     for (const state of beams) {
       const last = state.path[state.path.length - 1];
-      const scored: Array<{ track: TrackDTO; detail: TransitionDetail; rank: number; scale: number }> = [];
+      // 上位 branching 件だけを保持する（全候補を並べ替えない）
+      const top: Candidate[] = [];
 
       for (const track of candidates) {
         if (state.used.has(track.id)) continue;
-        const detail = scoreTransition(last, track, targets[step], options);
-        if (!detail) continue;
-        const scale = state.scale * detail.bpm.ratio;
+        const quick = quickScore(last, track, targets[step], options);
+        if (!quick) continue;
+        const scale = state.scale * quick.ratio;
         const penalty = keepTempo ? tempoBandPenalty(track.bpm * scale, anchorBpm) : 0;
-        scored.push({ track, detail, rank: detail.score - penalty, scale });
+        const candidate: Candidate = { track, score: quick.score, rank: quick.score - penalty, scale };
+
+        if (top.length === branching && !isBetter(candidate, top[branching - 1])) continue;
+        if (top.length < branching) top.push(candidate);
+        else top[branching - 1] = candidate;
+        for (let i = top.length - 1; i > 0 && isBetter(top[i], top[i - 1]); i -= 1) {
+          [top[i], top[i - 1]] = [top[i - 1], top[i]];
+        }
       }
 
-      scored.sort((a, b) => b.rank - a.rank || a.track.id.localeCompare(b.track.id));
-
-      for (const { track, detail, rank, scale } of scored.slice(0, branching)) {
+      for (const { track, score, rank, scale } of top) {
+        // 表示用の繋ぎ情報は、残した候補にだけ作る
+        const detail = describeTransition(last, track, targets[step], options);
         expanded.push({
           path: [...state.path, track],
           used: new Set(state.used).add(track.id),
           transitions: [...state.transitions, detail],
           rank: state.rank + rank,
-          total: state.total + detail.score,
+          total: state.total + score,
           scale,
         });
       }
@@ -290,7 +341,7 @@ export function generateAutoSet(
       break;
     }
 
-    expanded.sort((a, b) => b.rank - a.rank || pathKey(a).localeCompare(pathKey(b)));
+    expanded.sort((a, b) => b.rank - a.rank || byCodeUnit(pathKey(a), pathKey(b)));
     beams = expanded.slice(0, beamWidth);
   }
 
