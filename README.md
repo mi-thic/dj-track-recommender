@@ -46,7 +46,7 @@ BPM 帯・ジャンル・キーで絞り込み、並べ替えられます。
 - **次曲推薦** — テンポ・ハーモニック適合・エナジー遷移を重み付き合成してスコア化（0–100）。推薦理由も表示します。
 - **rekordbox インポート** — コレクション XML を読み込んで一括登録。キー表記は 3 種類すべて対応、プレイリスト単位の取り込みも可能です。
 - **Spotify 連携** — 曲を Spotify と紐付けてジャケットを表示し、組んだセットをプレイリストとして書き出せます（BPM・キーは取得不可。後述）。
-- **セットリストビルダー** — 1 曲目を選び、推薦を辿って流れを構築。繋ぎごとのピッチ差・キー関係・エナジー変化を確認でき、テキストで書き出せます。
+- **セットリスト** — 1 曲目を選び、推薦を辿って流れを構築。繋ぎごとのピッチ差・キー関係・エナジー変化を確認できます。保存したセットは一覧から開き直して並べ替え・削除・複製ができ、テキストや Spotify プレイリストとして書き出せます。
 - **Docker 対応** — 開発用（ホットリロード）と本番用（standalone ビルド）の 2 構成。
 
 ## セットアップ
@@ -284,6 +284,12 @@ docker compose exec app npx tsx scripts/check-spotify-match.ts
 | `POST` | `/api/spotify/match` | 未紐付けの曲を一括マッチング（`dryRun` 対応） |
 | `POST` | `/api/spotify/playlists` | セットをプレイリストとして作成 |
 | `POST` / `DELETE` | `/api/tracks/:id/spotify` | 曲の紐付け / 解除 |
+| `GET` | `/api/setlists` | 保存済みセットの一覧（更新日の新しい順） |
+| `POST` | `/api/setlists` | セットを保存（`name`, `notes`, `trackIds`。配列の順が曲順） |
+| `GET` | `/api/setlists/:id` | セットを曲順どおりに取得 |
+| `PATCH` | `/api/setlists/:id` | 名前・メモ・曲順のうち渡したものだけ更新 |
+| `DELETE` | `/api/setlists/:id` | セットを削除（曲はライブラリに残る） |
+| `POST` | `/api/setlists/:id/duplicate` | 「◯◯ のコピー」として複製 |
 
 推薦 API のクエリ:
 
@@ -308,7 +314,7 @@ curl "http://localhost:3000/api/tracks/<id>/recommendations?limit=5&keyCompatibl
 
 ```
 prisma/
-  schema.prisma          Track モデル
+  schema.prisma          Track / Setlist / SpotifyAccount モデル
   migrations/            初期マイグレーション
   seed.ts                サンプル 28 曲
 src/
@@ -318,12 +324,14 @@ src/
     tracks/[id]/         楽曲詳細＋次曲推薦
     tracks/[id]/edit/    編集
     import/              rekordbox インポート
-    setlist/             セットリストビルダー
+    setlist/             セットを組む（?id= で保存済みを開く）
+    setlists/            保存済みセットの一覧
     camelot/             Camelot ホイール
     spotify/             Spotify 連携設定・一括マッチング
     api/tracks/          REST API
     api/import/          インポート API
     api/spotify/         Spotify API
+    api/setlists/        セットリスト API
   components/            UI コンポーネント
   hooks/                 推薦取得フック
   lib/
@@ -331,6 +339,7 @@ src/
     bpm.ts               テンポ適合
     recommend.ts         推薦エンジン（純粋関数）
     rekordbox.ts         rekordbox XML パーサ
+    setlists.ts          セットリストの保存（サーバー専用）
     genres.ts            ジャンル候補
     library.ts           ライブラリ集計（サーバー専用）
     validation.ts        zod スキーマ

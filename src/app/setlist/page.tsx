@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { SetlistBuilder } from "@/components/SetlistBuilder";
 
-export const metadata = { title: "セットリスト | DJ Track Recommender" };
+export const metadata = { title: "セットを組む | DJ Track Recommender" };
 
 export default function SetlistPage() {
   return (

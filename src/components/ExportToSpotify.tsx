@@ -89,7 +89,11 @@ export function ExportToSpotify({ trackIds, unlinkedCount, defaultName }: Props)
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // 開くたびに最新のセット名を初期値にする（セット名はあとから変わりうる）
+          setName(defaultName);
+          setOpen(true);
+        }}
         disabled={trackIds.length === 0}
         className="rounded-lg border border-deck-700 px-3.5 py-2 text-sm text-deck-400 transition hover:bg-deck-800 hover:text-white disabled:opacity-40"
       >

@@ -12,7 +12,7 @@ const NAV = [
   { href: "/", label: "ライブラリ" },
   { href: "/tracks/new", label: "楽曲登録" },
   { href: "/import", label: "インポート" },
-  { href: "/setlist", label: "セットリスト" },
+  { href: "/setlists", label: "セットリスト" },
   { href: "/camelot", label: "Camelot ホイール" },
   { href: "/spotify", label: "Spotify" },
 ];

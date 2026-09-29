@@ -42,3 +42,19 @@ export function toTrackDTO(track: Track): TrackDTO {
     updatedAt: track.updatedAt.toISOString(),
   };
 }
+
+export interface SetlistSummaryDTO {
+  id: string;
+  name: string;
+  notes: string | null;
+  trackCount: number;
+  /** 曲尺が分かっている曲だけの合計 */
+  totalDurationSec: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SetlistDTO extends SetlistSummaryDTO {
+  /** 曲順どおり */
+  tracks: TrackDTO[];
+}

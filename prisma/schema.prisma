@@ -47,6 +47,8 @@ model Track {
   /// 国際標準レコーディングコード。Spotify 側の同一曲判定に使える
   isrc String?
 
+  setlistItems SetlistItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -70,4 +72,35 @@ model SpotifyAccount {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// 保存したセットリスト
+model Setlist {
+  id    String  @id @default(cuid())
+  name  String
+  notes String?
+
+  items SetlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+/// セットリスト内の 1 曲。position の昇順が曲順
+model SetlistItem {
+  id String @id @default(cuid())
+
+  setlistId String
+  setlist   Setlist @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+
+  /// 曲がライブラリから削除されたらセットからも外す
+  trackId String
+  track   Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  position Int
+
+  @@unique([setlistId, position])
+  @@index([trackId])
 }

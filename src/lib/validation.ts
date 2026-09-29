@@ -108,3 +108,19 @@ export function formatZodError(error: z.ZodError): Array<{ path: string; message
     message: issue.message,
   }));
 }
+
+/* ------------------------------------------------------------------ */
+/* セットリスト                                                        */
+/* ------------------------------------------------------------------ */
+
+export const setlistWriteSchema = z.object({
+  name: z.string().trim().min(1, "セット名を入力してください").max(100),
+  notes: optionalString(2000),
+  /** 配列の順番がそのまま曲順になる */
+  trackIds: z.array(z.string().min(1)).max(500, "1 つのセットに入れられるのは 500 曲までです"),
+});
+
+export const setlistUpdateSchema = setlistWriteSchema.partial();
+
+export type SetlistWriteInput = z.infer<typeof setlistWriteSchema>;
+export type SetlistUpdateInput = z.infer<typeof setlistUpdateSchema>;
