@@ -11,6 +11,7 @@ import { ExportToSpotify } from "@/components/ExportToSpotify";
 import { RecommendControlsBar } from "@/components/RecommendControlsBar";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SetFlowChart } from "@/components/SetFlowChart";
+import { TrackPicker } from "@/components/TrackPicker";
 import { DEFAULT_CONTROLS, useRecommendations, type RecommendControls } from "@/hooks/useRecommendations";
 import { formatBpm, matchBpm } from "@/lib/bpm";
 import type { AutoSetResult } from "@/lib/autoset";
@@ -47,6 +48,8 @@ export function SetlistBuilder() {
   const [query, setQuery] = useState("");
   const [controls, setControls] = useState<RecommendControls>(DEFAULT_CONTROLS);
   const [copied, setCopied] = useState(false);
+  // 次の曲を「おすすめ」から選ぶか、ライブラリ全体から自由に選ぶか
+  const [pickMode, setPickMode] = useState<"recommend" | "library">("recommend");
 
   // 保存まわり
   const [name, setName] = useState("");
@@ -178,6 +181,10 @@ export function SetlistBuilder() {
   function applyAutoSet(result: AutoSetResult) {
     setSetlist(result.tracks);
     setAutoPlan({ ids: result.tracks.map((track) => track.id), targets: result.targets });
+  }
+
+  function addTrack(track: TrackDTO) {
+    setSetlist((prev) => (prev.some((t) => t.id === track.id) ? prev : [...prev, track]));
   }
 
   function moveTrack(index: number, offset: -1 | 1) {
@@ -431,35 +438,81 @@ export function SetlistBuilder() {
       {/* 次の候補 or 1 曲目の選択 */}
       {current ? (
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">「{current.title}」の次の候補</h2>
-            {loading ? <span className="text-xs text-neon">計算中…</span> : null}
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold text-white">「{current.title}」の次に掛ける曲</h2>
+            {pickMode === "recommend" && loading ? (
+              <span className="text-xs text-neon">計算中…</span>
+            ) : null}
           </div>
 
-          <RecommendControlsBar controls={controls} onChange={setControls} genres={genres} />
-
-          {error ? (
-            <p className="rounded-lg border border-magenta/50 bg-magenta/10 px-3 py-2.5 text-sm text-magenta">
-              {error}
-            </p>
-          ) : null}
-
-          {!loading && !error && recommendations.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-deck-700 px-4 py-10 text-center text-sm text-deck-600">
-              候補がありません。条件を緩めるか、ライブラリに曲を追加してください。
-            </p>
-          ) : null}
-
-          <ul className="space-y-3">
-            {recommendations.map((recommendation, index) => (
-              <RecommendationCard
-                key={recommendation.track.id}
-                recommendation={recommendation}
-                rank={index + 1}
-                onPick={(picked) => setSetlist((prev) => [...prev, picked.track])}
-              />
+          <div role="tablist" aria-label="次の曲の選び方" className="flex gap-1 rounded-lg border border-deck-700/70 bg-deck-900/50 p-1 text-sm sm:w-fit">
+            {(
+              [
+                ["recommend", "おすすめから選ぶ"],
+                ["library", "ライブラリから選ぶ"],
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={pickMode === mode}
+                onClick={() => setPickMode(mode)}
+                className={`flex-1 rounded-md px-4 py-1.5 transition sm:flex-none ${
+                  pickMode === mode
+                    ? "bg-deck-700 font-medium text-white"
+                    : "text-deck-400 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
             ))}
-          </ul>
+          </div>
+
+          {pickMode === "library" ? (
+            <TrackPicker
+              current={current}
+              library={allTracks}
+              excludeIds={playedIds}
+              controls={controls}
+              onPick={addTrack}
+            />
+          ) : (
+            <>
+              <RecommendControlsBar controls={controls} onChange={setControls} genres={genres} />
+
+              {error ? (
+                <p className="rounded-lg border border-magenta/50 bg-magenta/10 px-3 py-2.5 text-sm text-magenta">
+                  {error}
+                </p>
+              ) : null}
+
+              {!loading && !error && recommendations.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-deck-700 px-4 py-10 text-center text-sm text-deck-600">
+                  候補がありません。条件を緩めるか、
+                  <button
+                    type="button"
+                    onClick={() => setPickMode("library")}
+                    className="text-neon underline"
+                  >
+                    ライブラリから選んで
+                  </button>
+                  ください。
+                </p>
+              ) : null}
+
+              <ul className="space-y-3">
+                {recommendations.map((recommendation, index) => (
+                  <RecommendationCard
+                    key={recommendation.track.id}
+                    recommendation={recommendation}
+                    rank={index + 1}
+                    onPick={(picked) => addTrack(picked.track)}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       ) : (
         <section className="space-y-3">

@@ -156,6 +156,26 @@ export function recommendNextTracks(
   return results.slice(0, limit);
 }
 
+/**
+ * 候補を絞り込まずに、全曲の相性を評価する（セットリストで次の曲を自由に選ぶとき用）。
+ *
+ * recommendNextTracks と同じ採点だが、キー非互換・ピッチ範囲外・低スコアの曲も
+ * 落とさずに返す。選ぶかどうかは DJ が決め、ここは判断材料を付けるだけ。
+ */
+export function evaluateCandidates(
+  from: TrackDTO,
+  candidates: TrackDTO[],
+  options: Pick<RecommendOptions, "maxPitchPercent" | "allowHalfDouble" | "excludeIds" | "weights"> = {},
+): Recommendation[] {
+  return recommendNextTracks(from, candidates, {
+    ...options,
+    keyCompatibleOnly: false,
+    genre: null,
+    minScore: 0,
+    limit: Number.POSITIVE_INFINITY,
+  });
+}
+
 /** スコアに対応する UI 用のランク */
 export function scoreRank(score: number): {
   label: string;

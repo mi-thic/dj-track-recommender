@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
-import { recommendNextTracks, scoreRank } from "../src/lib/recommend";
+import { evaluateCandidates, recommendNextTracks, scoreRank } from "../src/lib/recommend";
 import type { TrackDTO } from "../src/lib/types";
 
 function track(
@@ -108,6 +108,26 @@ describe("recommendNextTracks", () => {
 
   test("候補が空なら空配列", () => {
     assert.deepEqual(recommendNextTracks(FROM, []), []);
+  });
+});
+
+describe("evaluateCandidates", () => {
+  test("キー非互換・テンポ範囲外・低スコアの曲も落とさず、スコア順に返す", () => {
+    const pool = [track("far", 90, "3A"), track("smooth", 128, "9A"), track("clash", 128, "3A")];
+    const result = evaluateCandidates(FROM, pool);
+    assert.deepEqual(ids(result), ["smooth", "clash", "far"]);
+    assert.equal(result.find((r) => r.track.id === "far")?.key.compatible, false);
+    assert.equal(result.find((r) => r.track.id === "far")?.bpm.score, 0);
+  });
+
+  test("件数の上限をかけない", () => {
+    const pool = Array.from({ length: 25 }, (_, i) => track(`t${i}`, 128, "8A"));
+    assert.equal(evaluateCandidates(FROM, pool).length, 25);
+  });
+
+  test("自分自身と excludeIds（セット済み）は出さない", () => {
+    const pool = [FROM, track("a", 128, "8A"), track("b", 128, "9A")];
+    assert.deepEqual(ids(evaluateCandidates(FROM, pool, { excludeIds: ["a"] })), ["b"]);
   });
 });
 
