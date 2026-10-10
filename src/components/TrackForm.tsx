@@ -5,7 +5,9 @@ import { useState } from "react";
 
 import { ALL_CAMELOT_KEYS, toMusicalKey } from "@/lib/camelot";
 import { formatDuration, parseDuration } from "@/lib/format";
+import { TagInput } from "@/components/TagInput";
 import { mergeGenreSuggestions } from "@/lib/genres";
+import { mergeTagSuggestions } from "@/lib/tags";
 import type { TrackDTO } from "@/lib/types";
 
 interface Props {
@@ -15,6 +17,8 @@ interface Props {
   redirectTo?: string;
   /** ジャンル入力の候補。ライブラリにあるものを渡すと優先表示される */
   genreSuggestions?: string[];
+  /** タグ入力の候補。ライブラリで使っているタグを渡すと優先表示される */
+  tagSuggestions?: string[];
 }
 
 interface FormState {
@@ -28,6 +32,7 @@ interface FormState {
   releaseYear: string;
   label: string;
   notes: string;
+  tags: string[];
 }
 
 function initialState(track?: TrackDTO): FormState {
@@ -42,6 +47,7 @@ function initialState(track?: TrackDTO): FormState {
     releaseYear: track?.releaseYear != null ? String(track.releaseYear) : "",
     label: track?.label ?? "",
     notes: track?.notes ?? "",
+    tags: track?.tags ?? [],
   };
 }
 
@@ -51,10 +57,11 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-xs font-medium text-deck-400";
 
-export function TrackForm({ track, redirectTo, genreSuggestions = [] }: Props) {
+export function TrackForm({ track, redirectTo, genreSuggestions = [], tagSuggestions = [] }: Props) {
   const router = useRouter();
   const isEdit = Boolean(track);
   const genreOptions = mergeGenreSuggestions(genreSuggestions);
+  const tagOptions = mergeTagSuggestions(tagSuggestions);
 
   const [form, setForm] = useState<FormState>(() => initialState(track));
   const [submitting, setSubmitting] = useState(false);
@@ -94,6 +101,7 @@ export function TrackForm({ track, redirectTo, genreSuggestions = [] }: Props) {
         releaseYear: form.releaseYear,
         label: form.label,
         notes: form.notes,
+        tags: form.tags,
       };
 
       const response = await fetch(isEdit ? `/api/tracks/${track!.id}` : "/api/tracks", {
@@ -284,6 +292,18 @@ export function TrackForm({ track, redirectTo, genreSuggestions = [] }: Props) {
             onChange={(e) => update("label", e.target.value)}
             placeholder="Night Shift Records"
             maxLength={120}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="tags">
+            タグ（ムード・場面。複数付けられます）
+          </label>
+          <TagInput
+            id="tags"
+            value={form.tags}
+            onChange={(tags) => update("tags", tags)}
+            suggestions={tagOptions}
           />
         </div>
 

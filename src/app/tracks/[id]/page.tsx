@@ -8,7 +8,8 @@ import { SpotifyTrackLink } from "@/components/SpotifyTrackLink";
 import { bpmRange, formatBpm } from "@/lib/bpm";
 import { getCompatibleKeys, toMusicalKey } from "@/lib/camelot";
 import { formatDuration } from "@/lib/format";
-import { listLibraryGenres } from "@/lib/library";
+import { TagChips } from "@/components/TagChips";
+import { listLibraryGenres, listLibraryTags } from "@/lib/library";
 import { prisma } from "@/lib/prisma";
 import { toTrackDTO } from "@/lib/types";
 
@@ -30,7 +31,7 @@ export default async function TrackDetailPage({ params }: PageProps) {
 
   const dto = toTrackDTO(track);
 
-  const genres = await listLibraryGenres();
+  const [genres, tags] = await Promise.all([listLibraryGenres(), listLibraryTags()]);
 
   const range = bpmRange(dto.bpm, 8);
   const compatibleKeys = getCompatibleKeys(dto.camelot);
@@ -49,6 +50,7 @@ export default async function TrackDetailPage({ params }: PageProps) {
             <p className="text-xs uppercase tracking-wider text-neon">NOW PLAYING</p>
             <h1 className="mt-1 text-2xl font-bold text-white">{dto.title}</h1>
             <p className="mt-0.5 text-deck-400">{dto.artist}</p>
+            {dto.tags.length > 0 ? <TagChips tags={dto.tags} className="mt-2.5" /> : null}
           </div>
           <div className="flex gap-2">
             <Link
@@ -130,7 +132,7 @@ export default async function TrackDetailPage({ params }: PageProps) {
 
       <SpotifyTrackLink track={dto} />
 
-      <RecommendationPanel trackId={dto.id} genres={genres} />
+      <RecommendationPanel trackId={dto.id} genres={genres} tags={tags} />
     </div>
   );
 }

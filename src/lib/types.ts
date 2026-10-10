@@ -14,6 +14,8 @@ export interface TrackDTO {
   releaseYear: number | null;
   label: string | null;
   notes: string | null;
+  /** ムード・場面のタグ */
+  tags: string[];
   spotifyId: string | null;
   spotifyUrl: string | null;
   albumArtUrl: string | null;
@@ -35,6 +37,8 @@ export function toTrackDTO(track: Track): TrackDTO {
     releaseYear: track.releaseYear,
     label: track.label,
     notes: track.notes,
+    // 列は NULL 許容なので念のため空配列に寄せる
+    tags: track.tags ?? [],
     spotifyId: track.spotifyId,
     spotifyUrl: track.spotifyUrl,
     albumArtUrl: track.albumArtUrl,

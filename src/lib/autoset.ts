@@ -12,6 +12,7 @@
 
 import { matchBpm, tempoFit, type BpmMatch, type TempoRatio } from "./bpm";
 import { getCamelotCompatibility, type CamelotCompatibility } from "./camelot";
+import { hasAllTags } from "./tags";
 import type { TrackDTO } from "./types";
 
 export type EnergyShape = "arc" | "build" | "steady" | "cooldown";
@@ -126,6 +127,8 @@ export interface AutoSetOptions {
   allowHalfDouble?: boolean;
   keyCompatibleOnly?: boolean;
   genre?: string | null;
+  /** これらのタグをすべて持つ曲だけを候補にする（AND）。固定した曲には適用しない */
+  tags?: string[];
   /** セットのテンポを 1 曲目の ±TEMPO_BAND_PERCENT 付近に保つ。既定 true */
   keepTempo?: boolean;
   /** 候補から外す曲 */
@@ -274,7 +277,9 @@ export function generateAutoSet(
   const excluded = new Set([...(options.excludeIds ?? []), ...prefix.map((track) => track.id)]);
   const candidates = pool.filter(
     (track) =>
-      !excluded.has(track.id) && (!options.genre || track.genre === options.genre),
+      !excluded.has(track.id) &&
+      (!options.genre || track.genre === options.genre) &&
+      hasAllTags(track.tags, options.tags ?? []),
   );
 
   // 固定部分の繋ぎも表示用に採点しておく（テンポが合わなくても除外しない）

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_LENGTH as AUTOSET_MAX_LENGTH, MIN_LENGTH as AUTOSET_MIN_LENGTH } from "./autoset";
 import { isValidCamelot, normalizeCamelot } from "./camelot";
+import { normalizeTags } from "./tags";
 
 const emptyToNull = (value: unknown) => {
   if (typeof value === "string" && value.trim() === "") return null;
@@ -18,6 +19,9 @@ const optionalInt = (min: number, max: number) =>
     if (typeof cleaned === "string") return Number(cleaned);
     return cleaned;
   }, z.number().int().min(min).max(max).nullable().optional());
+
+/** タグの配列。正規化して空・重複を落とす */
+const tagListSchema = z.array(z.string().max(200)).max(100).transform((tags) => normalizeTags(tags));
 
 export const trackCreateSchema = z.object({
   title: z.string().trim().min(1, "タイトルは必須です").max(200),
@@ -38,6 +42,8 @@ export const trackCreateSchema = z.object({
   releaseYear: optionalInt(1900, 2200),
   label: optionalString(120),
   notes: optionalString(2000),
+  /** 正規化（空・重複の除去、最大 20 個）してから保存する */
+  tags: tagListSchema.optional(),
 });
 
 export const trackUpdateSchema = trackCreateSchema.partial();
@@ -95,6 +101,11 @@ export const recommendQuerySchema = z.object({
             .filter(Boolean),
     z.array(z.string()),
   ),
+  /** カンマ区切り。すべて持つ曲だけに絞る（AND） */
+  tags: z.preprocess(
+    (value) => (isBlank(value) ? [] : normalizeTags(String(value).split(","))),
+    z.array(z.string()),
+  ),
   weightBpm: optionalWeight,
   weightKey: optionalWeight,
   weightEnergy: optionalWeight,
@@ -143,6 +154,8 @@ export const autosetSchema = z
     /** セットのテンポを 1 曲目付近に保つ */
     keepTempo: z.boolean().default(true),
     genre: z.string().trim().min(1).nullable().optional(),
+    /** すべて持つ曲だけを候補にする（AND） */
+    tags: tagListSchema.optional(),
   })
   .refine((input) => input.length > input.trackIds.length, {
     message: "曲数は今のセットの曲数より多くしてください",
@@ -150,3 +163,20 @@ export const autosetSchema = z
   });
 
 export type AutosetInput = z.infer<typeof autosetSchema>;
+
+/* ------------------------------------------------------------------ */
+/* タグの一括編集                                                      */
+/* ------------------------------------------------------------------ */
+
+export const bulkTagSchema = z
+  .object({
+    trackIds: z.array(z.string().min(1)).min(1, "曲を選んでください").max(2000),
+    add: tagListSchema.default([]),
+    remove: tagListSchema.default([]),
+  })
+  .refine((input) => input.add.length + input.remove.length > 0, {
+    message: "付けるタグか外すタグを指定してください",
+    path: ["add"],
+  });
+
+export type BulkTagInput = z.infer<typeof bulkTagSchema>;

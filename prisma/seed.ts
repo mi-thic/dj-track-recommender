@@ -68,6 +68,28 @@ const TRACKS: SeedTrack[] = [
   { title: "Morning Static", artist: "Sano Deep", bpm: 116, camelot: "10B", genre: "Deep House", energy: 2, durationSec: 384, releaseYear: 2022 },
 ];
 
+/** デモ用のタグ。タグでの絞り込みを試せるよう、一部の曲にだけ付ける */
+const DEMO_TAGS: Record<string, string[]> = {
+  "Slow Tide": ["オープニング", "インスト"],
+  "Harbour Lights": ["オープニング", "ブレイク長め"],
+  "Velvet Room": ["ウォームアップ", "ボーカルあり"],
+  "Paper Moon": ["ウォームアップ", "ボーカルあり", "定番"],
+  "Midnight Circuit": ["ビルドアップ", "ブレイク長め"],
+  "Static Bloom": ["ビルドアップ", "インスト"],
+  "Basement Rules": ["ビルドアップ", "ボーカルあり"],
+  "Neon Corridor": ["ピーク", "ボーカルあり"],
+  "Glass Avenue": ["ピーク", "インスト"],
+  "Low Orbit": ["ピーク", "アンセム"],
+  "Red Shift": ["ピーク", "インスト"],
+  "Hard Reset": ["ピーク", "ドロップ強め"],
+  "Tunnel Vision": ["ピーク", "ドロップ強め"],
+  "Skyline Fracture": ["ピーク", "ボーカルあり", "アンセム"],
+  "Zero Hour": ["ピーク", "アンセム"],
+  "Undertow": ["クールダウン", "チル"],
+  "Last Train Home": ["締め", "ボーカルあり"],
+  "Morning Static": ["締め", "チル"],
+};
+
 async function main() {
   const existing = await prisma.track.count();
   if (existing > 0) {
@@ -85,6 +107,7 @@ async function main() {
         label: track.label ?? null,
         notes: track.notes ?? null,
         releaseYear: track.releaseYear ?? null,
+        tags: DEMO_TAGS[track.title] ?? [],
       },
     });
   }

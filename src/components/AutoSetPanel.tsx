@@ -69,6 +69,7 @@ export function AutoSetPanel({ setlist, controls, onGenerated }: Props) {
           keyCompatibleOnly: controls.keyCompatibleOnly,
           keepTempo,
           genre: controls.genre || null,
+          tags: controls.tags,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -201,7 +202,7 @@ export function AutoSetPanel({ setlist, controls, onGenerated }: Props) {
       </div>
 
       <p className="text-[11px] text-deck-600">
-        ピッチ許容・ハーフ/ダブルタイム・キー適合のみ・ジャンルは、下の「次の候補」の設定を使います。
+        ピッチ許容・ハーフ/ダブルタイム・キー適合のみ・ジャンル・タグは、下の「おすすめから選ぶ」の設定を使います。
       </p>
 
       {error ? <p className="text-xs text-magenta">{error}</p> : null}

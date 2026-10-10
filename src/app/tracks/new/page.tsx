@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 import { TrackForm } from "@/components/TrackForm";
-import { listLibraryGenres } from "@/lib/library";
+import { listLibraryGenres, listLibraryTags } from "@/lib/library";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "楽曲登録 | DJ Track Recommender" };
 
 export default async function NewTrackPage() {
-  const genres = await listLibraryGenres();
+  const [genres, tags] = await Promise.all([listLibraryGenres(), listLibraryTags()]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -23,7 +23,11 @@ export default async function NewTrackPage() {
       </div>
 
       <div className="rounded-xl border border-deck-700/70 bg-deck-900/50 p-5 sm:p-6">
-        <TrackForm redirectTo="/" genreSuggestions={genres} />
+        <TrackForm
+          redirectTo="/"
+          genreSuggestions={genres}
+          tagSuggestions={tags.map((t) => t.tag)}
+        />
       </div>
     </div>
   );

@@ -37,6 +37,9 @@ model Track {
   label       String?
   notes       String?
 
+  /// ムード・場面のタグ（"ピーク" "ボーカルあり" など）。1 曲に複数付けられる
+  tags String[] @default([])
+
   /// rekordbox の TrackID。再インポート時の突き合わせに使う
   rekordboxId String? @unique
 

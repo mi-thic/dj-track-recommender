@@ -5,13 +5,16 @@ import { useState } from "react";
 import { RecommendControlsBar } from "@/components/RecommendControlsBar";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { DEFAULT_CONTROLS, useRecommendations, type RecommendControls } from "@/hooks/useRecommendations";
+import type { TagCount } from "@/lib/tags";
 
 interface Props {
   trackId: string;
   genres: string[];
+  /** ライブラリにあるタグ（絞り込み用） */
+  tags: TagCount[];
 }
 
-export function RecommendationPanel({ trackId, genres }: Props) {
+export function RecommendationPanel({ trackId, genres, tags }: Props) {
   const [controls, setControls] = useState<RecommendControls>(DEFAULT_CONTROLS);
   const { recommendations, loading, error } = useRecommendations(trackId, controls);
 
@@ -22,7 +25,12 @@ export function RecommendationPanel({ trackId, genres }: Props) {
         {loading ? <span className="text-xs text-neon">計算中…</span> : null}
       </div>
 
-      <RecommendControlsBar controls={controls} onChange={setControls} genres={genres} />
+      <RecommendControlsBar
+        controls={controls}
+        onChange={setControls}
+        genres={genres}
+        tags={tags}
+      />
 
       {error ? (
         <p className="rounded-lg border border-magenta/50 bg-magenta/10 px-3 py-2.5 text-sm text-magenta">

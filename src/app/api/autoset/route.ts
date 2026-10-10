@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/autoset — セットを自動で組む（保存はしない）
  *
- * body: { trackIds, length, shape, maxPitchPercent?, allowHalfDouble?, keyCompatibleOnly?, keepTempo?, genre? }
+ * body: { trackIds, length, shape, maxPitchPercent?, allowHalfDouble?, keyCompatibleOnly?, keepTempo?, genre?, tags? }
  *   trackIds  固定する曲。1 曲なら「その曲から組む」、複数なら「続きを組む」
  *   length    固定した曲を含めた合計曲数（2〜40）
  *   shape     arc（山型）/ build（右肩上がり）/ steady（一定）/ cooldown（クールダウン）
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       keyCompatibleOnly: input.keyCompatibleOnly,
       keepTempo: input.keepTempo,
       genre: input.genre ?? null,
+      tags: input.tags ?? [],
     });
 
     return NextResponse.json({ result });

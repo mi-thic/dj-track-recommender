@@ -17,6 +17,7 @@ import { formatBpm, matchBpm } from "@/lib/bpm";
 import type { AutoSetResult } from "@/lib/autoset";
 import { getCamelotCompatibility } from "@/lib/camelot";
 import { formatDuration } from "@/lib/format";
+import { countTags } from "@/lib/tags";
 import type { SetlistDTO, TrackDTO } from "@/lib/types";
 
 const inputClass =
@@ -162,6 +163,8 @@ export function SetlistBuilder() {
     () => Array.from(new Set(allTracks.map((t) => t.genre).filter((g): g is string => !!g))).sort(),
     [allTracks],
   );
+
+  const tagCounts = useMemo(() => countTags(allTracks), [allTracks]);
 
   const candidates = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -479,7 +482,12 @@ export function SetlistBuilder() {
             />
           ) : (
             <>
-              <RecommendControlsBar controls={controls} onChange={setControls} genres={genres} />
+              <RecommendControlsBar
+                controls={controls}
+                onChange={setControls}
+                genres={genres}
+                tags={tagCounts}
+              />
 
               {error ? (
                 <p className="rounded-lg border border-magenta/50 bg-magenta/10 px-3 py-2.5 text-sm text-magenta">

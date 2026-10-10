@@ -4,9 +4,12 @@ import { useMemo, useState } from "react";
 
 import { CamelotBadge } from "@/components/CamelotBadge";
 import { EnergyMeter } from "@/components/EnergyMeter";
+import { TagChips } from "@/components/TagChips";
+import { TagFilter } from "@/components/TagFilter";
 import type { RecommendControls } from "@/hooks/useRecommendations";
 import { formatBpm } from "@/lib/bpm";
 import { evaluateCandidates, scoreRank, type Recommendation } from "@/lib/recommend";
+import { countTags, hasAllTags } from "@/lib/tags";
 import type { TrackDTO } from "@/lib/types";
 
 type SortKey = "score" | "title" | "artist" | "bpm";
@@ -41,6 +44,7 @@ interface Props {
 export function TrackPicker({ current, library, excludeIds, controls, onPick }: Props) {
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -48,6 +52,8 @@ export function TrackPicker({ current, library, excludeIds, controls, onPick }: 
     () => Array.from(new Set(library.map((t) => t.genre).filter((g): g is string => !!g))).sort(),
     [library],
   );
+
+  const tagCounts = useMemo(() => countTags(library), [library]);
 
   // 採点は相性の設定（ピッチ許容幅・ハーフ/ダブル）だけ反映し、絞り込み系の設定は無視する
   const evaluated = useMemo(
@@ -64,8 +70,9 @@ export function TrackPicker({ current, library, excludeIds, controls, onPick }: 
     const q = query.trim().toLowerCase();
     const filtered = evaluated.filter(({ track }) => {
       if (genre && track.genre !== genre) return false;
+      if (!hasAllTags(track.tags, tags)) return false;
       if (!q) return true;
-      return `${track.title} ${track.artist} ${track.label ?? ""} ${track.camelot}`
+      return `${track.title} ${track.artist} ${track.label ?? ""} ${track.camelot} ${track.tags.join(" ")}`
         .toLowerCase()
         .includes(q);
     });
@@ -81,7 +88,7 @@ export function TrackPicker({ current, library, excludeIds, controls, onPick }: 
       }
       return a.track.title.localeCompare(b.track.title, "ja");
     });
-  }, [evaluated, query, genre, sortKey]);
+  }, [evaluated, query, genre, tags, sortKey]);
 
   // 検索条件が変わったら先頭から表示し直す
   function resetPaging<T>(setter: (value: T) => void) {
@@ -98,7 +105,7 @@ export function TrackPicker({ current, library, excludeIds, controls, onPick }: 
           className={`${inputClass} min-w-56 flex-1`}
           value={query}
           onChange={(e) => resetPaging(setQuery)(e.target.value)}
-          placeholder="タイトル / アーティスト / キーで検索"
+          placeholder="タイトル / アーティスト / キー / タグで検索"
           aria-label="ライブラリを検索"
         />
         <select
@@ -126,6 +133,8 @@ export function TrackPicker({ current, library, excludeIds, controls, onPick }: 
           <option value="bpm">BPM 順</option>
         </select>
       </div>
+
+      <TagFilter available={tagCounts} selected={tags} onChange={resetPaging(setTags)} />
 
       <p className="text-xs text-deck-600">
         {rows.length} 曲（セット済みの曲は除外）。相性が悪い曲も選べます。繋ぎに注意が要る曲は赤で表示します。
@@ -173,6 +182,7 @@ function PickerRow({ row, onPick }: { row: Recommendation; onPick: (track: Track
       <div className="min-w-0 flex-1 basis-48">
         <p className="truncate text-sm font-medium text-white">{track.title}</p>
         <p className="truncate text-xs text-deck-400">{track.artist}</p>
+        <TagChips tags={track.tags} max={4} className="mt-1" />
       </div>
 
       <div className="flex items-center gap-2.5">

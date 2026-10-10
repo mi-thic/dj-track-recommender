@@ -11,6 +11,8 @@ export interface RecommendControls {
   keyCompatibleOnly: boolean;
   minScore: number;
   genre: string;
+  /** すべて持つ曲だけに絞るタグ（AND） */
+  tags: string[];
   excludeIds: string[];
 }
 
@@ -21,6 +23,7 @@ export const DEFAULT_CONTROLS: RecommendControls = {
   keyCompatibleOnly: false,
   minScore: 30,
   genre: "",
+  tags: [],
   excludeIds: [],
 };
 
@@ -33,6 +36,7 @@ export function buildRecommendUrl(trackId: string, controls: RecommendControls):
     minScore: String(controls.minScore),
   });
   if (controls.genre) params.set("genre", controls.genre);
+  if (controls.tags.length > 0) params.set("tags", controls.tags.join(","));
   if (controls.excludeIds.length > 0) params.set("excludeIds", controls.excludeIds.join(","));
   return `/api/tracks/${trackId}/recommendations?${params.toString()}`;
 }

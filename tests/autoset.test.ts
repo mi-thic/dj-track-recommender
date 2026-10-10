@@ -34,6 +34,7 @@ function track(
     releaseYear: null,
     label: null,
     notes: null,
+    tags: [],
     spotifyId: null,
     spotifyUrl: null,
     albumArtUrl: null,
@@ -255,6 +256,22 @@ describe("generateAutoSet", () => {
     const picked = result.tracks.slice(1);
     assert.ok(picked.every((t) => !excludeIds.includes(t.id)));
     assert.ok(picked.every((t) => t.genre === "Techno"));
+  });
+
+  test("タグを指定すると、すべて持つ曲だけを選ぶ（固定した曲は対象外）", () => {
+    const tagged = pool.map((t, i) => ({
+      ...t,
+      tags: i % 3 === 0 ? ["ピーク", "ボーカルあり"] : i % 3 === 1 ? ["ピーク"] : [],
+    }));
+    const result = generateAutoSet([start], tagged, {
+      length: 8,
+      shape: "steady",
+      tags: ["ピーク", "ボーカルあり"],
+    });
+    assert.equal(result.tracks[0].id, start.id, "1 曲目はタグが無くても固定");
+    const picked = result.tracks.slice(1);
+    assert.ok(picked.length > 0);
+    assert.ok(picked.every((t) => t.tags.includes("ピーク") && t.tags.includes("ボーカルあり")));
   });
 
   test("候補が足りなければ途中で止めて、そのことを返す", () => {

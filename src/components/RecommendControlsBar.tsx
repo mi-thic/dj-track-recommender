@@ -1,18 +1,22 @@
 "use client";
 
+import { TagFilter } from "@/components/TagFilter";
 import type { RecommendControls } from "@/hooks/useRecommendations";
+import type { TagCount } from "@/lib/tags";
 
 interface Props {
   controls: RecommendControls;
   onChange: (next: RecommendControls) => void;
   genres: string[];
+  /** ライブラリにあるタグ。無ければタグの絞り込みは出さない */
+  tags?: TagCount[];
 }
 
 const selectClass =
   "rounded-lg border border-deck-700 bg-deck-900 px-2.5 py-1.5 text-xs text-white outline-none " +
   "transition focus:border-neon/70 focus:ring-2 focus:ring-neon/20";
 
-export function RecommendControlsBar({ controls, onChange, genres }: Props) {
+export function RecommendControlsBar({ controls, onChange, genres, tags = [] }: Props) {
   const set = <K extends keyof RecommendControls>(key: K, value: RecommendControls[K]) =>
     onChange({ ...controls, [key]: value });
 
@@ -83,6 +87,16 @@ export function RecommendControlsBar({ controls, onChange, genres }: Props) {
           ))}
         </select>
       </label>
+
+      {tags.length > 0 ? (
+        <div className="w-full border-t border-deck-800 pt-3">
+          <TagFilter
+            available={tags}
+            selected={controls.tags}
+            onChange={(next) => set("tags", next)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

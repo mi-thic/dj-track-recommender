@@ -24,6 +24,7 @@ function track(
     releaseYear: null,
     label: null,
     notes: null,
+    tags: [],
     spotifyId: null,
     spotifyUrl: null,
     albumArtUrl: null,
@@ -104,6 +105,17 @@ describe("recommendNextTracks", () => {
   test("ダブルタイムで繋ぐ候補には理由にその旨が入る", () => {
     const [top] = recommendNextTracks(track("dnb", 174, "8A"), [track("half", 87, "8A")]);
     assert.ok(top.reasons.some((r) => r.includes("ダブルタイム")), top.reasons.join(" / "));
+  });
+
+  test("タグはすべて持つ曲だけに絞る（AND・大小文字は区別しない）", () => {
+    const pool = [
+      { ...track("both", 128, "8A"), tags: ["Peak", "ボーカルあり"] },
+      { ...track("peakOnly", 128, "8A"), tags: ["peak"] },
+      { ...track("none", 128, "8A"), tags: [] },
+    ];
+    assert.deepEqual(ids(recommendNextTracks(FROM, pool, { tags: ["peak"] })).sort(), ["both", "peakOnly"]);
+    assert.deepEqual(ids(recommendNextTracks(FROM, pool, { tags: ["peak", "ボーカルあり"] })), ["both"]);
+    assert.equal(recommendNextTracks(FROM, pool, { tags: [] }).length, 3, "空なら絞り込まない");
   });
 
   test("候補が空なら空配列", () => {

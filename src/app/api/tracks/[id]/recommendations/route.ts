@@ -14,7 +14,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  *
  * クエリ:
  *   limit, maxPitchPercent, allowHalfDouble, keyCompatibleOnly,
- *   minScore, genre, excludeIds(カンマ区切り), weightBpm/weightKey/weightEnergy
+ *   minScore, genre, tags(カンマ区切り・AND), excludeIds(カンマ区切り), weightBpm/weightKey/weightEnergy
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
@@ -27,6 +27,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     keyCompatibleOnly: searchParams.get("keyCompatibleOnly") ?? undefined,
     minScore: searchParams.get("minScore") ?? undefined,
     genre: searchParams.get("genre") ?? undefined,
+    tags: searchParams.get("tags") ?? undefined,
     excludeIds: searchParams.get("excludeIds") ?? undefined,
     weightBpm: searchParams.get("weightBpm") ?? undefined,
     weightKey: searchParams.get("weightKey") ?? undefined,
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     keyCompatibleOnly: query.keyCompatibleOnly,
     minScore: query.minScore,
     genre: query.genre,
+    tags: query.tags,
     excludeIds: query.excludeIds,
     weights,
   });

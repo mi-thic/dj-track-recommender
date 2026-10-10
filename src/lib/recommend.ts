@@ -7,6 +7,7 @@
 
 import { matchBpm, type BpmMatch, type MatchBpmOptions } from "./bpm";
 import { getCamelotCompatibility, type CamelotCompatibility } from "./camelot";
+import { hasAllTags } from "./tags";
 import type { TrackDTO } from "./types";
 
 export interface RecommendWeights {
@@ -43,6 +44,8 @@ export interface RecommendOptions extends MatchBpmOptions {
   keyCompatibleOnly?: boolean;
   /** 指定ジャンルのみに絞る */
   genre?: string | null;
+  /** これらのタグをすべて持つ曲だけに絞る（AND） */
+  tags?: string[];
   /** 除外する楽曲 ID（既にプレイ済みなど） */
   excludeIds?: string[];
   /** この値未満のスコアは捨てる。既定 30 */
@@ -106,6 +109,7 @@ export function recommendNextTracks(
   const {
     keyCompatibleOnly = false,
     genre = null,
+    tags = [],
     excludeIds = [],
     minScore = 30,
     limit = 10,
@@ -120,6 +124,7 @@ export function recommendNextTracks(
   for (const candidate of candidates) {
     if (excluded.has(candidate.id)) continue;
     if (genre && candidate.genre !== genre) continue;
+    if (!hasAllTags(candidate.tags, tags)) continue;
 
     const key = getCamelotCompatibility(from.camelot, candidate.camelot);
     if (keyCompatibleOnly && !key.compatible) continue;
@@ -171,6 +176,7 @@ export function evaluateCandidates(
     ...options,
     keyCompatibleOnly: false,
     genre: null,
+    tags: [],
     minScore: 0,
     limit: Number.POSITIVE_INFINITY,
   });

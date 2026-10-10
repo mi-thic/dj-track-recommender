@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CamelotBadge } from "@/components/CamelotBadge";
 import { EnergyMeter } from "@/components/EnergyMeter";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { TagChips } from "@/components/TagChips";
 import { formatBpm } from "@/lib/bpm";
 import { formatDuration } from "@/lib/format";
 import type { Recommendation } from "@/lib/recommend";
@@ -34,6 +35,7 @@ export function RecommendationCard({ recommendation, rank, onPick }: Props) {
               {track.title}
             </Link>
             <p className="truncate text-sm text-deck-400">{track.artist}</p>
+            <TagChips tags={track.tags} max={5} className="mt-1.5" />
           </div>
         </div>
         <ScoreBadge score={score} />

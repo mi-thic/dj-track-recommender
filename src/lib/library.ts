@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { countTags, type TagCount } from "./tags";
 
 /**
  * ライブラリで実際に使われているジャンルの一覧。
@@ -15,4 +16,10 @@ export async function listLibraryGenres(): Promise<string[]> {
   });
 
   return rows.map((row) => row.genre).filter((genre): genre is string => !!genre);
+}
+
+/** ライブラリで使われているタグと使用曲数（多い順） */
+export async function listLibraryTags(): Promise<TagCount[]> {
+  const rows = await prisma.track.findMany({ select: { tags: true } });
+  return countTags(rows.map((row) => ({ tags: row.tags ?? [] })));
 }
